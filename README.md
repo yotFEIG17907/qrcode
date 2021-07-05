@@ -17,6 +17,34 @@ The AMQ messages do things like:
 * Pause/Resume the current playlist item
 * Reset
 
+All the messages are JSON and follow the same format, which is TBD
+
+# Packages
+## amq_client_player
+
+This subscribes to the AMQ topic executes actions specified in the messages, e.g. to play an MP3.
+It needs to:
+* Connect to an AMQ broker
+* Read in a playlist that maps an index to the path to an Audio file
+* Execute the actions specified in the messages
+* Connect and re-connect to the broker
+
+Configuration
+* The host and port of the AMQ broker
+* The topic to subscribe to
+* The playlist that maps index to Audio file
+
+## HTTP to AMQ Bridge
+This is a web server application. The main endpoint for this application does this:
+* Connects and re-connects to an AMQ broker
+* Receives a request that has a topic + data, e.g. an integer which is the playlist index
+* It packs the data into a JSON message and publishes to the specified topic
+
+Configuration:
+* The IP and port to listen on
+* The host and port of the AMQ broker
+* The topic to publish to
+
 ## Useful links:
 * (https://betterprogramming.pub/how-to-generate-and-decode-qr-codes-in-python-a933bce56fd0)[How to generate and decode QR Codes]
 * Play music on MAC or Raspberry PI https://www.pygame.org/ and https://pypi.org/project/pygame/
