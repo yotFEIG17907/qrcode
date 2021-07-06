@@ -24,7 +24,7 @@ All the messages are JSON and follow the same format, which is TBD
 
 This subscribes to the AMQ topic executes actions specified in the messages, e.g. to play an MP3.
 It needs to:
-* Connect to an AMQ broker
+* Connect to an AMQ broker (mqtt protocol)
 * Read in a playlist that maps an index to the path to an Audio file
 * Execute the actions specified in the messages
 * Connect and re-connect to the broker
