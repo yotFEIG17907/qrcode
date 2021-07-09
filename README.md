@@ -45,9 +45,20 @@ Configuration:
 * The host and port of the AMQ broker
 * The topic to publish to
 
+# Docker Stuff
+This assumes Docker community edition is installed which it is.
+
+## Run Portainer in Docker
+
+[https://documentation.portainer.io/v2.0/deploy/ceinstalldocker/](https://documentation.portainer.io/v2.0/deploy/ceinstalldocker/)
+
+## Run MQTT Broker in docker
+* [Run MQTT in docker](https://philhawthorne.com/setting-up-a-local-mosquitto-server-using-docker-for-mqtt-communication/)
+* [Eclipse MQTT](https://hub.docker.com/_/eclipse-mosquitto)
+
 ## Useful links:
-* (https://betterprogramming.pub/how-to-generate-and-decode-qr-codes-in-python-a933bce56fd0)[How to generate and decode QR Codes]
-* Play music on MAC or Raspberry PI https://www.pygame.org/ and https://pypi.org/project/pygame/
+* [How to generate and decode QR Codes](https://betterprogramming.pub/how-to-generate-and-decode-qr-codes-in-python-a933bce56fd0)
+* [Play music on MAC or Raspberry PI](https://www.pygame.org/ and https://pypi.org/project/pygame/)
 
 
 
