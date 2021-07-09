@@ -9,7 +9,7 @@ of control message. Messages are published to this topic from a variety of sourc
 * A stand-alone script on a Pi-Zero with a RFID reader publishes a message containing selected parts
   of the data in the RFID token. Like a "wand".
   
-The AMQ messages do things like:
+The MQTT messages do things like:
 * Start playing a playlist item, the item index provided in the message. Does the message contain
   an index or does it name a item, e.g. a mp3 file? In the first instance, the message just has
   an index; what this does is determined by the receiver.
@@ -20,11 +20,11 @@ The AMQ messages do things like:
 All the messages are JSON and follow the same format, which is TBD
 
 # Packages
-## amq_client_player
+## client_player
 
-This subscribes to the AMQ topic executes actions specified in the messages, e.g. to play an MP3.
+This subscribes to the topic and executes actions specified in the messages, e.g. to play an MP3.
 It needs to:
-* Connect to an AMQ broker (mqtt protocol)
+* Connect to an MQTT broker (mqtt protocol)
 * Read in a playlist that maps an index to the path to an Audio file
 * Execute the actions specified in the messages
 * Connect and re-connect to the broker
@@ -34,15 +34,15 @@ Configuration
 * The topic to subscribe to
 * The playlist that maps index to Audio file
 
-## HTTP to AMQ Bridge
+## HTTP to MQTT Bridge
 This is a web server application. The main endpoint for this application does this:
-* Connects and re-connects to an AMQ broker
+* Connects and re-connects to an MQTT broker
 * Receives a request that has a topic + data, e.g. an integer which is the playlist index
 * It packs the data into a JSON message and publishes to the specified topic
 
 Configuration:
 * The IP and port to listen on
-* The host and port of the AMQ broker
+* The host and port of the MQTT broker
 * The topic to publish to
 
 # Docker Stuff
