@@ -5,6 +5,7 @@ import os
 import time
 from pathlib import Path
 
+from comms import run_tasks_in_parallel
 from comms.mqtt_comms import SensorListener, MqttComms
 
 
@@ -67,17 +68,22 @@ def main():
                       port=port,
                       sub_topic=sub_topic,
                       msg_listener=test_listener)
-    logger.info("Starting to listen")
-    comms.connect_and_non_block(keep_alive_seconds=keep_alive_seconds)
-    for i in range(5):
-        # Do things here for a while, then shut down
-        logger.info("Try to publish payload")
-        payload = f"Message #{i}"
-        comms.publish(pub_topic, payload, qos=2)
-        time.sleep(1)
-    comms.connection_stop()
-    logger.info("Connection stopped, wait for a bit for disconnection")
-    time.sleep(10)
+
+    def publisher():
+        for i in range(5):
+            # Do things here for a while, then shut down
+            logger.info("Try to publish payload")
+            payload = f"Message #{i}"
+            comms.publish(pub_topic, payload, qos=2)
+            time.sleep(1)
+        comms.connection_stop()
+
+    # Need a list of function objects hence the use of the lambda keyword
+    # without this, the function would simply be invoked and its return value
+    # is what would be added to the list
+    run_tasks_in_parallel([
+        lambda: comms.connect_and_run(keep_alive_seconds=keep_alive_seconds),
+        lambda: publisher()])
     logger.info("Shutting down")
 
 

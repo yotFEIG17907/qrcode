@@ -3,6 +3,7 @@ A class to wrap dealing with the MQTT broker
 Background reading: http://www.steves-internet-guide.com/into-mqtt-python-client/
 """
 import logging
+import time
 from abc import ABC, abstractmethod
 
 import paho.mqtt.client as mqtt
@@ -51,6 +52,8 @@ class MqttComms:
     #   At least once (1)
     #   Exactly once (2).
     qos: int  # The desired quality of service
+    # Stop running if this flag becomes false
+    running: bool
 
     def __init__(self,
                  client_id: str,
@@ -63,6 +66,7 @@ class MqttComms:
                  msg_listener: SensorListener = None):
         if msg_listener is None:
             raise ValueError("Need to supply a SensorListener")
+        self.running = True
         self.sub_topic = sub_topic
         # Clean session = don't want persistence
         self.client = mqtt.Client(client_id=client_id, protocol=mqtt.MQTTv311, clean_session=True)
@@ -83,8 +87,20 @@ class MqttComms:
         self.logger = logging.getLogger("comms.mqtt")
         self.qos = 1  # At least once
 
-    def connect_and_start(self, keep_alive_seconds: int):
-        self.client.connect(host=self.hostname, port=self.port, keepalive=keep_alive_seconds)
+    def connect_and_run(self, keep_alive_seconds: int):
+        # Loop until initial connection is made and while the running flag is still true
+        retry_period_seconds = 5
+        while self.running:
+            try:
+                self.client.connect(host=self.hostname, port=self.port, keepalive=keep_alive_seconds)
+                break
+            except ConnectionRefusedError:
+                self.logger.warning("Connection refused, try again in %d seconds", retry_period_seconds)
+                time.sleep(retry_period_seconds)
+        if not self.running:
+            self.logger.warning("Running flag is not set, abort")
+            return
+
         # Blocking call that processes network traffic, dispatches callbacks and
         # handles reconnecting. Which is great, if it disconnects the re-connection is automatic.
         # Other loop*() functions are available that give a threaded interface and a
@@ -99,15 +115,9 @@ class MqttComms:
             self.client.loop_stop(force=True)
             self.client.disconnect()
 
-    def connect_and_non_block(self, keep_alive_seconds: int):
-        self.client.connect(host=self.hostname, port=self.port, keepalive=keep_alive_seconds)
-        # Non-blocking call that connects and returns immediately.
-        # It calls loop_start() to start a background thread that handles communication
-        # and lets the main thread do other things.
-        self.client.loop_start()
-
     def connection_stop(self):
-        self.client.loop_stop()
+        self.running = False
+        self.client.disconnect()
 
     # The callback for when the client receives a CONNACK response from the server.
     def on_connect(self, client, userdata, flags, rc):
@@ -165,9 +175,14 @@ class MqttComms:
     def publish(self, topic: str, payload=None, qos=0, retain=False):
         rc: mqtt.MQTTMessageInfo = self.client.publish(topic, payload, qos, retain)
         self.logger.info("Message published to topic %s payload %s", topic, payload)
-        if rc.rc == mqtt.MQTT_ERR_SUCCESS:
+        error_code = rc.rc
+        if error_code == mqtt.MQTT_ERR_SUCCESS:
             self.logger.info("Message published or queued for publishing")
-        elif rc == mqtt.MQTT_ERR_NO_CONN:
+        elif error_code == mqtt.MQTT_ERR_NO_CONN:
             self.logger.error("Not connected, message discarded")
+        elif error_code == mqtt.MQTT_ERR_CONN_REFUSED:
+            self.logger.error("Connection refused, message discarded")
+        elif error_code == mqtt.MQTT_ERR_CONN_LOST:
+            self.logger.error("Connection refused, message discarded")
         else:
-            self.logger.error("Publish unexpected %d %s", rc.rc, mqtt.error_string(rc.rc))
+            self.logger.error("Publish unexpected %d %s", error_code, mqtt.error_string(error_code))
