@@ -45,6 +45,9 @@ Configuration:
 * The host and port of the MQTT broker
 * The topic to publish to
 
+There are two test drivers used to explore how to pub/sub and deal with the broker connection
+failing. `pub_mqtt_driver.py` and `sub_mqt_driver.py`
+
 # Docker Stuff
 This assumes Docker community edition is installed which it is.
 
