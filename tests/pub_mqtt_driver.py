@@ -2,11 +2,11 @@ import argparse
 import logging
 import logging.config
 import os
-import time
 from pathlib import Path
 
 from comms import run_tasks_in_parallel
 from comms.mqtt_comms import SensorListener, MqttComms
+from messages.music_control import MusicCommand, MKommand, cmd_to_json
 
 
 class TestListener(SensorListener):
@@ -30,6 +30,25 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument("-l", "--log-config", type=Path, required=True, help="Path to logging configuration file")
     args = parser.parse_args()
     return args
+
+
+def publisher(comms: MqttComms, pub_topic: str):
+    while True:
+        keypressed = input("Press a key and hit return")
+        if keypressed == 'q':
+            comms.connection_stop()
+            break
+        elif keypressed == '0':
+            cmd: MusicCommand = MusicCommand(command=MKommand.PLAY, payload=0)
+            msg = cmd_to_json(cmd)
+            comms.publish(topic=pub_topic, payload=msg, qos=2)
+        elif keypressed == '1':
+            cmd: MusicCommand = MusicCommand(command=MKommand.PLAY, payload=1)
+            msg = cmd_to_json(cmd)
+            comms.publish(topic=pub_topic, payload=msg, qos=2)
+        else:
+            print("Unsupported keypress", keypressed)
+    comms.connection_stop()
 
 
 def main():
@@ -69,21 +88,13 @@ def main():
                       sub_topic=sub_topic,
                       msg_listener=test_listener)
 
-    def publisher():
-        for i in range(5):
-            # Do things here for a while, then shut down
-            logger.info("Try to publish payload")
-            payload = f"Message #{i}"
-            comms.publish(pub_topic, payload, qos=2)
-            time.sleep(1)
-        comms.connection_stop()
-
     # Need a list of function objects hence the use of the lambda keyword
     # without this, the function would simply be invoked and its return value
     # is what would be added to the list
     run_tasks_in_parallel([
         lambda: comms.connect_and_run(keep_alive_seconds=keep_alive_seconds),
-        lambda: publisher()])
+        lambda: publisher(comms=comms, pub_topic=pub_topic)])
+    # Previous call blocks until they are all done
     logger.info("Shutting down")
 
 

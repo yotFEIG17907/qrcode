@@ -7,6 +7,7 @@ from pathlib import Path
 
 from comms import run_tasks_in_parallel
 from comms.mqtt_comms import SensorListener, MqttComms
+from messages.music_control import cmd_from_json
 
 
 class TestListener(SensorListener):
@@ -20,8 +21,12 @@ class TestListener(SensorListener):
     def on_protocol_event(self, reason: str) -> None:
         self.logger.debug("Protocol Event %s", reason)
 
-    def on_message(self, topic: bytes, payload: bytes):
-        self.logger.info("Message received Topic (%s) Payload (%s)", topic, payload.decode("utf-8"))
+    def on_message(self, topic: str, payload: bytes):
+        try:
+            cmd = cmd_from_json(payload.decode("utf-8"))
+            self.logger.info("Message received Topic (%s) Payload (%s)", topic, str(cmd))
+        except Exception as e:
+            self.logger.error("Problem de-serialized message %s", str(e))
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -81,7 +86,7 @@ def main():
     # Run these tasks in parallel, the communication task and a shutdown task
     run_tasks_in_parallel([
         lambda: comms.connect_and_run(keep_alive_seconds=keep_alive_seconds),
-        lambda: shutdown(run_period_seconds=20)])
+        lambda: shutdown(run_period_seconds=200)])
 
     logger.info("All done..")
 
