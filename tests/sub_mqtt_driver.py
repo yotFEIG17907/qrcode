@@ -4,16 +4,28 @@ import logging.config
 import os
 import time
 from pathlib import Path
+from typing import List
 
+from client_player.music_player import MusicPlayer
 from comms import run_tasks_in_parallel
 from comms.mqtt_comms import SensorListener, MqttComms
 from messages.music_control import cmd_from_json
 
 
+playlist: List[Path] = [
+    Path('/Users/kenm/Music/iTunes/iTunes Music/Unknown Artist/Unknown Album/Chris and James Nifong What a Wonderful World.mp3'),
+    Path('/Users/kenm/Music/iTunes/iTunes Music/Unknown Artist/Unknown Album/Ah Juliana.wav'),
+    Path('/Users/kenm/Music/iTunes/iTunes Music/Unknown Artist/Unknown Album/Amber Marget.wav'),
+    Path('/Users/kenm/Music/iTunes/iTunes Music/The Eagles/The Very Best Of The Eagles/12 Peaceful Easy Feeling.mp3'),
+    Path('/Users/kenm/Music/iTunes/iTunes Music/The Eagles/The Very Best Of The Eagles/02 Take It Easy.mp3'),
+    Path('../data/08 Brain Damage 1.wav')]
+
+
 class TestListener(SensorListener):
 
-    def __init__(self):
+    def __init__(self, playlist: List[Path]):
         self.logger = logging.getLogger("comms.mqtt")
+        self.player = MusicPlayer(playlist=playlist)
 
     def on_disconnect(self, reason: str):
         self.logger.debug("Disconnection event %s", reason)
@@ -25,6 +37,7 @@ class TestListener(SensorListener):
         try:
             cmd = cmd_from_json(payload.decode("utf-8"))
             self.logger.info("Message received Topic (%s) Payload (%s)", topic, str(cmd))
+            self.player.start(cmd.payload)
         except Exception as e:
             self.logger.error("Problem de-serialized message %s", str(e))
 
@@ -39,6 +52,8 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def main():
+    global playlist
+
     args = parse_arguments()
     logging_configuration = args.log_config
     if not logging_configuration.exists():
@@ -62,7 +77,7 @@ def main():
     sub_topic = "kontrol/music"
     keep_alive_seconds = 20
 
-    test_listener = TestListener()
+    test_listener = TestListener(playlist=playlist)
     comms = MqttComms(client_id=client_id,
                       cert_path=cert_path,
                       username=username,

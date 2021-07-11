@@ -38,12 +38,9 @@ def publisher(comms: MqttComms, pub_topic: str):
         if keypressed == 'q':
             comms.connection_stop()
             break
-        elif keypressed == '0':
-            cmd: MusicCommand = MusicCommand(command=MKommand.PLAY, payload=0)
-            msg = cmd_to_json(cmd)
-            comms.publish(topic=pub_topic, payload=msg, qos=2)
-        elif keypressed == '1':
-            cmd: MusicCommand = MusicCommand(command=MKommand.PLAY, payload=1)
+        elif keypressed in ['0', '1', '2', '3', '4', '5']:
+            payload = int(keypressed)
+            cmd: MusicCommand = MusicCommand(command=MKommand.PLAY, payload=payload)
             msg = cmd_to_json(cmd)
             comms.publish(topic=pub_topic, payload=msg, qos=2)
         else:
