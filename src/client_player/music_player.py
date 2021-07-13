@@ -39,6 +39,16 @@ class MusicPlayer():
         """
         pygame.mixer.music.stop()
 
-    def set_volume(self, setting: float) -> None:
-        self.logger.info("Set volume to %f", setting)
-        pygame.mixer.music.set_volume(setting)
+    def set_volume(self, setting: int) -> None:
+        """
+        Sets the volume, 0 mutes completely. 100 is the full volume set by
+        the host's volume control. The setting value is clamped to between 0
+        and 100.
+        :param setting: The new volume setting.
+        :return: The old volume setting as a value between 0 and 100
+        """
+        old_volume = pygame.mixer.music.get_volume()
+        new_value = max(0, min(100, setting))
+        pygame.mixer.music.set_volume(new_value/100.0)
+        self.logger.info("Input value %d, adjusted to %d", setting, new_value)
+        return int(old_volume * 100.0)

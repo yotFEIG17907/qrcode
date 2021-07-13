@@ -9,11 +9,11 @@ from typing import List
 from client_player.music_player import MusicPlayer
 from comms import run_tasks_in_parallel
 from comms.mqtt_comms import SensorListener, MqttComms
-from messages.music_control import cmd_from_json
-
+from messages.music_control import cmd_from_json, MusicPlayCommand, MusicStopCommand, MusicVolumeCommand
 
 playlist: List[Path] = [
-    Path('/Users/kenm/Music/iTunes/iTunes Music/Unknown Artist/Unknown Album/Chris and James Nifong What a Wonderful World.mp3'),
+    Path(
+        '/Users/kenm/Music/iTunes/iTunes Music/Unknown Artist/Unknown Album/Chris and James Nifong What a Wonderful World.mp3'),
     Path('/Users/kenm/Music/iTunes/iTunes Music/Unknown Artist/Unknown Album/Ah Juliana.wav'),
     Path('/Users/kenm/Music/iTunes/iTunes Music/Unknown Artist/Unknown Album/Amber Marget.wav'),
     Path('/Users/kenm/Music/iTunes/iTunes Music/The Eagles/The Very Best Of The Eagles/12 Peaceful Easy Feeling.mp3'),
@@ -36,8 +36,13 @@ class TestListener(SensorListener):
     def on_message(self, topic: str, payload: bytes):
         try:
             cmd = cmd_from_json(payload.decode("utf-8"))
-            self.logger.info("Message received Topic (%s) Payload (%s)", topic, str(cmd))
-            self.player.start(cmd.payload)
+            self.logger.info("Message received Topic (%s) Type(%s) Payload (%s)", topic, type(cmd), str(cmd))
+            if isinstance(cmd, MusicPlayCommand):
+                self.player.start(cmd.payload)
+            elif isinstance(cmd, MusicStopCommand):
+                self.player.stop()
+            elif isinstance(cmd, MusicVolumeCommand):
+                self.player.set_volume(cmd.payload)
         except Exception as e:
             self.logger.error("Problem de-serialized message %s", str(e))
 

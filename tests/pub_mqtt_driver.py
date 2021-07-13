@@ -6,7 +6,7 @@ from pathlib import Path
 
 from comms import run_tasks_in_parallel
 from comms.mqtt_comms import SensorListener, MqttComms
-from messages.music_control import MusicCommand, MKommand, cmd_to_json
+from messages.music_control import MusicPlayCommand, MKommand, cmd_to_json
 
 
 class TestListener(SensorListener):
@@ -40,7 +40,7 @@ def publisher(comms: MqttComms, pub_topic: str):
             break
         elif keypressed in ['0', '1', '2', '3', '4', '5']:
             payload = int(keypressed)
-            cmd: MusicCommand = MusicCommand(command=MKommand.PLAY, payload=payload)
+            cmd: MusicPlayCommand = MusicPlayCommand(command=MKommand.PLAY, payload=payload)
             msg = cmd_to_json(cmd)
             comms.publish(topic=pub_topic, payload=msg, qos=2)
         else:
