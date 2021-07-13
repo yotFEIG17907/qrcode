@@ -106,6 +106,7 @@ class MqttComms:
         # Other loop*() functions are available that give a threaded interface and a
         # manual interface.
         try:
+            self.logger.info("Start the communications loop, will run until stopped")
             self.client.loop_forever()
         except KeyboardInterrupt:
             self.client.loop_stop(force=True)

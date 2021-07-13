@@ -101,7 +101,7 @@ def main():
     # Run these tasks in parallel, the communication task and a shutdown task
     run_tasks_in_parallel([
         lambda: comms.connect_and_run(keep_alive_seconds=keep_alive_seconds),
-        lambda: shutdown(run_period_seconds=200)])
+        lambda: shutdown(run_period_seconds=600)])
 
     logger.info("All done..")
 
