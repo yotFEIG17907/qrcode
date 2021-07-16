@@ -44,7 +44,7 @@ class MqttComms:
     port: int
     # The topic to subscribe to, messages are received on this topic
     # For topic naming see this: https://www.hivemq.com/blog/mqtt-essentials-part-5-mqtt-topics-best-practices/
-    sub_topic: str
+    cmd_topic: str
     # All received messages are sent to this listener for handling
     msg_listener: SensorListener
     # This is the quality of service
@@ -62,12 +62,12 @@ class MqttComms:
                  password: str,
                  hostname: str,
                  port: int,
-                 sub_topic: str,
+                 cmd_topic: str,
                  msg_listener: SensorListener = None):
         if msg_listener is None:
             raise ValueError("Need to supply a SensorListener")
         self.running = True
-        self.sub_topic = sub_topic
+        self.cmd_topic = cmd_topic
         # Clean session = don't want persistence
         self.client = mqtt.Client(client_id=client_id, protocol=mqtt.MQTTv311, clean_session=True)
         # Connect the client's callback functions to the methods in this class
@@ -124,12 +124,12 @@ class MqttComms:
     def on_connect(self, client, userdata, flags, rc):
         self.logger.info("Connected with result code " + str(rc) + " " + mqtt.connack_string(rc))
         if rc == 0:
-            # If a sub_topic was supplied in the constructor then subscribe
-            if self.sub_topic is not None:
-                res = client.subscribe(self.sub_topic, qos=self.qos)
+            # If a cmd_topic was supplied in the constructor then subscribe
+            if self.cmd_topic is not None:
+                res = client.subscribe(self.cmd_topic, qos=self.qos)
                 if res[0] != mqtt.MQTT_ERR_SUCCESS:
                     raise RuntimeError(f"Subscribe failed, the client is not really connected {res[0]}")
-                msg = f"Subscribed to messages for all devices {self.sub_topic} returned mid {res[1]}"
+                msg = f"Subscribed to messages for all devices {self.cmd_topic} returned mid {res[1]}"
                 self.logger.info(msg)
                 self.msg_listener.on_protocol_event(msg)
         else:
