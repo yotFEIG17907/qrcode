@@ -86,6 +86,7 @@ the code on the desktop and then upload and run on the PI.
 * Problem with qrcode module needing Python >=3.8 when the PI has only 3.7.x installed. Solution
 was basically that qrcode is not needed in the music_player, it is for making QRCodes and doesn't need
 to run on the PI, this is something that will be run only on the desktop.
+  
 * Next problem was that pygame couldn't find libsdl2-mixer-2.0.so.0. Solution to this was simply to
 install it.
   ```bash
@@ -105,16 +106,35 @@ This error can be solved by increasing the mixer buffer, which in version 2.0.0 
         # Increase the buffer from the default of 512 to eliminate the underrun warning message
         pygame.mixer.pre_init(buffer=2048)
 ```
+* File names that have accents on the letters are valid file names on the PI (and on the MAC) but
+the Path exists() function says they don't exist. So, how does Python Pathlib deal with file names that have accents.
+  
 
 And it happened over and over, I guess the sound hardware was started up but given nothing to play.
-* There is one WAV file that is copied to the pi, and that one did in fact play. Volume control works. Amazing.
-
-* The music and playlist will be placed on an external USB drive, the PI mounts these to `/media/pi/<VOLUME_NAME>` provided
+* Started with one WAV file that was included the upload and it worked, amazing. Quickly after that switched
+to putting music and the playlist on an external USB drive. The PI mounts these to `/media/pi/<VOLUME_NAME>` provided
 one of the standard file formats is used.
+  
 
-** Make the MQTT broker run on the Raspberry PI
 
-** Make the qr-gateway (Web Server) run on the Raspberry PI
+# Make the MQTT broker run on the Raspberry PI
+
+I just followed the instructions here [Install Mosquitto Server](https://pimylifeup.com/raspberry-pi-mosquitto-mqtt-server/)
+
+* First step was to update the PI, which was quite involved because my image is from at least a year ago, this took 
+  minutes and minutes. Mosquitto is easy because it is part of the raspbian repository
+  ```bash
+  sudo apt update
+  sudo apt full-upgrade
+  # Install mosquitto and clients
+  sudo apt install mosquitto mosquitto-clients
+  # Testing
+  # Could use the client scripts but I just used the Python application and it worked
+  ```
+* 
+
+# Make the qr-gateway (Web Server) run on the Raspberry PI
+TBD
 
 # Useful links:
 * [How to generate and decode QR Codes](https://betterprogramming.pub/how-to-generate-and-decode-qr-codes-in-python-a933bce56fd0)
