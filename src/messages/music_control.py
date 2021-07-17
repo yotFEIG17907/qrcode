@@ -11,17 +11,16 @@ class MusicPlayCommand(object):
 
 @dataclass
 class MusicStopCommand(object):
-    # Add dummy payload
     pass
+
 
 @dataclass
 class MusicPauseCommand(object):
-    # Add dummy payload
     pass
+
 
 @dataclass
 class MusicUnpauseCommand(object):
-    # Add dummy payload
     pass
 
 

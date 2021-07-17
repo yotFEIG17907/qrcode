@@ -4,7 +4,6 @@ import logging.config
 import os
 import time
 from pathlib import Path
-from typing import List
 
 from client_player.music_player import MusicPlayer
 from comms import run_tasks_in_parallel_no_block
@@ -52,6 +51,8 @@ class MusicCommandGatewayListener(SensorListener):
                 self.player.unpause()
             elif isinstance(cmd, MusicVolumeCommand):
                 self.player.set_volume(cmd.payload)
+            else:
+                self.logger.warning("Unsupported cmd type %s", type(cmd))
         except Exception as e:
             self.logger.error("Problem de-serialized message %s", str(e))
 
@@ -115,20 +116,26 @@ def main():
                       msg_listener=test_listener)
     logger.info("Starting to listen to broker %s, cmd topic: %s", args.mqtt_broker, cmd_topic)
 
-    # This call will block so start a thread before this to shut it down after
-    # some period of time
-
     def shutdown(run_period_seconds: int):
+        """
+        This sleeps for some period and then stops the connection and returns. Stopping
+        the connection will cause an event that stops the main communications loop and
+        the program ends.
+        :param run_period_seconds: The number of seconds to run before shutting down
+        :return: Nothing
+        """
         logger.info("Sleep for a %d seconds then stop communications", run_period_seconds)
         time.sleep(run_period_seconds)
         logger.info("Programmed shutdown after %d seconds", run_period_seconds)
         comms.connection_stop()
         logger.info("Shutdown exiting")
 
-    # Run these tasks in parallel, the communication task and a shutdown task
+    # Run these tasks in parallel, the communication task.
+    # Add the shutdown task if you want the whole program to exit after some delay
+    # Note: in this version the shutdown is not provided so the program will keep going
+    # for ever or until stopped by some other means
     run_tasks_in_parallel_no_block([
-        lambda: comms.connect_and_run(keep_alive_seconds=keep_alive_seconds),
-        lambda: shutdown(run_period_seconds=600)])
+        lambda: comms.connect_and_run(keep_alive_seconds=keep_alive_seconds)])
 
     logger.info("All done..")
 
