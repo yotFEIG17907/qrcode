@@ -9,7 +9,8 @@ from typing import List
 from client_player.music_player import MusicPlayer
 from comms import run_tasks_in_parallel_no_block
 from comms.mqtt_comms import SensorListener, MqttComms
-from messages.music_control import cmd_from_json, MusicPlayCommand, MusicStopCommand, MusicVolumeCommand
+from messages.music_control import cmd_from_json, MusicPlayCommand, MusicStopCommand, MusicVolumeCommand, \
+    MusicPauseCommand, MusicUnpauseCommand
 
 """
 This is the music player, it receives commands from the mqtt broker and controls
@@ -19,16 +20,6 @@ index that is used as a reference to this playlist.
 """
 
 
-playlist: List[Path] = [
-    Path(
-        '/Users/kenm/Music/iTunes/iTunes Music/Unknown Artist/Unknown Album/Chris and James Nifong What a Wonderful World.mp3'),
-    Path('/Users/kenm/Music/iTunes/iTunes Music/Unknown Artist/Unknown Album/Ah Juliana.wav'),
-    Path('/Users/kenm/Music/iTunes/iTunes Music/Unknown Artist/Unknown Album/Amber Marget.wav'),
-    Path('/Users/kenm/Music/iTunes/iTunes Music/The Eagles/The Very Best Of The Eagles/12 Peaceful Easy Feeling.mp3'),
-    Path('/Users/kenm/Music/iTunes/iTunes Music/The Eagles/The Very Best Of The Eagles/02 Take It Easy.mp3'),
-    Path('../data/08 Brain Damage 1.wav')]
-
-
 class MusicCommandGatewayListener(SensorListener):
     """
     This handles messages and other events received from the MQTT broker.
@@ -36,9 +27,9 @@ class MusicCommandGatewayListener(SensorListener):
     which are used to command the music player.
     """
 
-    def __init__(self, playlist: List[Path]):
+    def __init__(self, playlist_path: Path):
         self.logger = logging.getLogger("comms.mqtt")
-        self.player = MusicPlayer(playlist=playlist)
+        self.player = MusicPlayer(playlist_path=playlist_path)
 
     def on_disconnect(self, reason: str):
         self.logger.debug("Disconnection event %s", reason)
@@ -55,6 +46,10 @@ class MusicCommandGatewayListener(SensorListener):
                 self.player.start(cmd.payload)
             elif isinstance(cmd, MusicStopCommand):
                 self.player.stop()
+            elif isinstance(cmd, MusicPauseCommand):
+                self.player.pause()
+            elif isinstance(cmd, MusicUnpauseCommand):
+                self.player.unpause()
             elif isinstance(cmd, MusicVolumeCommand):
                 self.player.set_volume(cmd.payload)
         except Exception as e:
@@ -72,6 +67,8 @@ def parse_arguments() -> argparse.Namespace:
                         help=f"Host and port of the MQTT broker, default is \"{default_mqtt_broker}\"")
     parser.add_argument("-t", "--cmd-topic", type=str, required=False, default=default_cmd_topic,
                         help=f"The topic to receive music commands, default is \"{default_cmd_topic}\"")
+    parser.add_argument("-p", "--playlist", type=Path, required=True,
+                        help="Path to the file that lists the music files to be played")
     args = parser.parse_args()
     return args
 
@@ -93,6 +90,10 @@ def main():
     logger.info("Starting music player")
 
     client_id = args.client_id
+    playlist_path: Path = args.playlist
+    if not playlist_path.exists():
+        logger.warning("Specified playlist file not found %s", str(playlist_path))
+        return
     cert_path = None
     username = None
     password = None
@@ -103,7 +104,7 @@ def main():
     cmd_topic = args.cmd_topic
     keep_alive_seconds = 20
 
-    test_listener = MusicCommandGatewayListener(playlist=playlist)
+    test_listener = MusicCommandGatewayListener(playlist_path=playlist_path)
     comms = MqttComms(client_id=client_id,
                       cert_path=cert_path,
                       username=username,
@@ -120,7 +121,7 @@ def main():
     def shutdown(run_period_seconds: int):
         logger.info("Sleep for a %d seconds then stop communications", run_period_seconds)
         time.sleep(run_period_seconds)
-        logger.info("Tell communications to stop")
+        logger.info("Programmed shutdown after %d seconds", run_period_seconds)
         comms.connection_stop()
         logger.info("Shutdown exiting")
 

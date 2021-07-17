@@ -6,7 +6,6 @@ Experiment, play a wav file via Python
 import pygame
 
 musicfile = '/Users/kenm/Music/iTunes/iTunes Music/Unknown Artist/Unknown Album/Chris and James Nifong What a Wonderful World.mp3'
-#musicfile = 'data/08 Brain Damage 1.wav'
 pygame.mixer.init()
 pygame.mixer.music.load(musicfile)
 pygame.mixer.music.set_volume(1.0)
