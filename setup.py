@@ -19,5 +19,5 @@ setup(
     description='Play music, choices chosen via QRCode and RFID',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    python_requires='>=3.8'
+    python_requires='>=3.7'
 )

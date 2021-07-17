@@ -59,6 +59,26 @@ This assumes Docker community edition is installed which it is.
 * [Run MQTT in docker](https://philhawthorne.com/setting-up-a-local-mosquitto-server-using-docker-for-mqtt-communication/)
 * [Eclipse MQTT](https://hub.docker.com/_/eclipse-mosquitto)
 
+## Making the music_player component run on Raspberry PI. 
+
+* Problem with qrcode module needing Python >=3.8 when the PI has only 3.7.x installed. Solution
+was basically that qrcode is not needed in the music_player, it is for making QRCodes and doesn't need
+to run on the PI, this is something that will be run only on the desktop.
+* Next problem was that pygame couldn't find libsdl2-mixer-2.0.so.0. Solution to this was simply to
+install it.
+  ```bash
+  sudo apt install libsdl2-mixer-2.0
+  ```
+* The music player had same problem running tasks in paralell that the qr-gateway had, the tasks seemed to be running series -- because
+there was a block on getting results from each function. The comms function failed because the host name was missing a hyphen but
+the log message was not visible. Changing to the no_block version of the function worked and the error message was printed out,
+easy fix to the hostname.
+* The music could not play because the file does not exist, none of the ones in the playlist are available. So... it didn't
+play but then after some tens of seconds there this this error
+```
+ALSA lib pcm.c:8424:(snd_pcm_recover) underrun occurred
+```
+And it happened over and over, I guess the sound hardware was started up but given nothing to play.
 ## Useful links:
 * [How to generate and decode QR Codes](https://betterprogramming.pub/how-to-generate-and-decode-qr-codes-in-python-a933bce56fd0)
 * [Play music on MAC or Raspberry PI](https://www.pygame.org/ and https://pypi.org/project/pygame/)

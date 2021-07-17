@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List
 
 from client_player.music_player import MusicPlayer
-from comms import run_tasks_in_parallel
+from comms import run_tasks_in_parallel_no_block
 from comms.mqtt_comms import SensorListener, MqttComms
 from messages.music_control import cmd_from_json, MusicPlayCommand, MusicStopCommand, MusicVolumeCommand
 
@@ -125,7 +125,7 @@ def main():
         logger.info("Shutdown exiting")
 
     # Run these tasks in parallel, the communication task and a shutdown task
-    run_tasks_in_parallel([
+    run_tasks_in_parallel_no_block([
         lambda: comms.connect_and_run(keep_alive_seconds=keep_alive_seconds),
         lambda: shutdown(run_period_seconds=600)])
 

@@ -88,6 +88,7 @@ class MqttComms:
         self.qos = 1  # At least once
 
     def connect_and_run(self, keep_alive_seconds: int):
+        self.logger.info("Start the connection attempt")
         # Loop until initial connection is made and while the running flag is still true
         retry_period_seconds = 5
         while self.running:
@@ -97,6 +98,9 @@ class MqttComms:
             except ConnectionRefusedError:
                 self.logger.warning("Connection refused, try again in %d seconds", retry_period_seconds)
                 time.sleep(retry_period_seconds)
+            except Exception as e:
+                self.logger.error("Unexpected exception connecting, just exit %s", str(e))
+                return
         if not self.running:
             self.logger.warning("Running flag is not set, abort")
             return
