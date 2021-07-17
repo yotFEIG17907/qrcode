@@ -79,6 +79,8 @@ play but then after some tens of seconds there this this error
 ALSA lib pcm.c:8424:(snd_pcm_recover) underrun occurred
 ```
 And it happened over and over, I guess the sound hardware was started up but given nothing to play.
+* There is one WAV file that is copied to the pi, and that one did in fact play. Volume control works. Amazing.
+
 ## Useful links:
 * [How to generate and decode QR Codes](https://betterprogramming.pub/how-to-generate-and-decode-qr-codes-in-python-a933bce56fd0)
 * [Play music on MAC or Raspberry PI](https://www.pygame.org/ and https://pypi.org/project/pygame/)

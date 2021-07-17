@@ -26,7 +26,7 @@ playlist: List[Path] = [
     Path('/Users/kenm/Music/iTunes/iTunes Music/Unknown Artist/Unknown Album/Amber Marget.wav'),
     Path('/Users/kenm/Music/iTunes/iTunes Music/The Eagles/The Very Best Of The Eagles/12 Peaceful Easy Feeling.mp3'),
     Path('/Users/kenm/Music/iTunes/iTunes Music/The Eagles/The Very Best Of The Eagles/02 Take It Easy.mp3'),
-    Path('../../data/08 Brain Damage 1.wav')]
+    Path('../data/08 Brain Damage 1.wav')]
 
 
 class MusicCommandGatewayListener(SensorListener):
