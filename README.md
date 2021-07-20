@@ -166,6 +166,21 @@ I just followed the instructions here [Install Mosquitto Server](https://pimylif
   ```
 * 
 
+# Running the system
+
+* Music Player Node
+ ** This has the music player and the mqtt broker.
+  ```bash
+  cd src
+  python3 client_player/sub_mqtt_driver.py -l ../conf/logging.config -p /media/pi/9016-4EF8/dylan_playlist.txt
+  ```
+
+* Qr Gateway
+  ** Provides the web server interface
+  ```bash
+  # This uses the defaults for everything. Need to add command-line arguments to this one
+  python3 src/main.py 
+  ```
 # Useful links:
 * [How to generate and decode QR Codes](https://betterprogramming.pub/how-to-generate-and-decode-qr-codes-in-python-a933bce56fd0)
 * [Play music on MAC or Raspberry PI](https://www.pygame.org/ and https://pypi.org/project/pygame/)
