@@ -107,15 +107,48 @@ This error can be solved by increasing the mixer buffer, which in version 2.0.0 
         pygame.mixer.pre_init(buffer=2048)
 ```
 * File names that have accents on the letters are valid file names on the PI (and on the MAC) but
-the Path exists() function says they don't exist. So, how does Python Pathlib deal with file names that have accents.
+the Path exists() function says they don't exist. So, how does Python Pathlib deal with file names that have accents
+  even when in theory it is using UTF-8 strings?
   
 
-And it happened over and over, I guess the sound hardware was started up but given nothing to play.
 * Started with one WAV file that was included the upload and it worked, amazing. Quickly after that switched
 to putting music and the playlist on an external USB drive. The PI mounts these to `/media/pi/<VOLUME_NAME>` provided
 one of the standard file formats is used.
   
+# Use text to speech for logging
+Follow the set up instructions here: [https://www.dexterindustries.com/howto/make-your-raspberry-pi-speak/](https://www.dexterindustries.com/howto/make-your-raspberry-pi-speak/)
+This includes a check that sound is set up, which it already is otherwise the music playback would not have worked.
 
+`sudo apt-get install espeak`
+
+The voice sounds robotic, but it is free and doesn't require an internet connection unlike the other Text-to-Speech tools.
+But... to run this with Python it is run as an external process.
+
+Try festival
+
+`sudo apt-get install festival`
+
+And a lighter version of Festival
+
+`sudo apt-get install flite`
+
+`flite` with the female voice `slt` sounds best. But it needs to be installed and run via subprocess call on the PI
+
+```python
+import subprocess
+text = '"Hello world"'
+subprocess.call('flite -voice slt '+text, shell=True)
+
+text = '"You are listening to text to speech synthesis using Festival package from the University of Edinburgh in the UK."'
+subprocess.call('flite -voice slt '+text, shell=True)
+filename = 'hello'
+file=open(filename,'w')
+file.write(text)
+file.close()
+subprocess.call('flite -voice slt < '+filename, shell=True)
+```
+
+This will be installed the music-player to voice informational, instructional and warning messages.
 
 # Make the MQTT broker run on the Raspberry PI
 
@@ -132,9 +165,6 @@ I just followed the instructions here [Install Mosquitto Server](https://pimylif
   # Could use the client scripts but I just used the Python application and it worked
   ```
 * 
-
-# Make the qr-gateway (Web Server) run on the Raspberry PI
-TBD
 
 # Useful links:
 * [How to generate and decode QR Codes](https://betterprogramming.pub/how-to-generate-and-decode-qr-codes-in-python-a933bce56fd0)
