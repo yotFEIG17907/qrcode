@@ -148,7 +148,17 @@ file.close()
 subprocess.call('flite -voice slt < '+filename, shell=True)
 ```
 
-This will be installed the music-player to voice informational, instructional and warning messages.
+This will be installed the music-player to voice informational, instructional and warning messages. There will
+be a standalone program that takes messages from a topic on MQTT and plays them as text.
+
+# Console Scripts
+
+Add console scripts to `setup.py` to simplify launching Python scripts
+```python
+    entry_points = {
+        'console_scripts': ['music_player=client_player.sub_mqtt_driver:main']
+    }
+```
 
 # Make the MQTT broker run on the Raspberry PI
 

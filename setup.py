@@ -19,5 +19,9 @@ setup(
     description='Play music, choices chosen via QRCode and RFID',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    python_requires='>=3.7'
+    python_requires='>=3.7',
+    entry_points = {
+        'console_scripts': ['music_player=client_player.sub_mqtt_driver:main',
+                            'text_to_speech=speech.mqtt_to_speech:main']
+    }
 )

@@ -30,6 +30,12 @@ class MusicVolumeCommand(object):
     payload: int
 
 
+@dataclass
+class TextToSpeech(object):
+    # Convert this text to speech
+    payload: str
+
+
 def cmd_to_json(cmd: MusicPlayCommand) -> str:
     return jsonpickle.encode(cmd)
 
