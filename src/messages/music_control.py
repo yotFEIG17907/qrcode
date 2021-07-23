@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 import jsonpickle
 
@@ -36,9 +37,4 @@ class TextToSpeech(object):
     payload: str
 
 
-def cmd_to_json(cmd: MusicPlayCommand) -> str:
-    return jsonpickle.encode(cmd)
 
-
-def cmd_from_json(text: str) -> MusicPlayCommand:
-    return jsonpickle.decode(text)
