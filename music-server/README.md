@@ -179,18 +179,41 @@ I just followed the instructions here [Install Mosquitto Server](https://pimylif
 # Running the system
 
 * Music Player Node
- ** This has the music player and the mqtt broker.
+  This has the music player and the mqtt broker.
+  ** Using Python explicitly
   ```bash
   cd src
   python3 client_player/sub_mqtt_driver.py -l ../conf/logging.config -p /media/pi/9016-4EF8/dylan_playlist.txt
   ```
-
-* Qr Gateway
-  ** Provides the web server interface
+  ** Or using the console script
+  ```bash
+  music_player -l ../conf/logging.config -p /media/pi/9016-4EF8/dylan_playlist.txt  
+  ```
+* QR Gateway
+  Provides the web server interface
+  ** Using Python explicitly
   ```bash
   # This uses the defaults for everything. Need to add command-line arguments to this one
   python3 src/main.py 
   ```
+  ** Or using console script
+  ```bash
+  cd proj/qrgateway
+  qr_gateway
+  ```
+* Barcode Reader
+  Reads a barcode and publishes a command to the MQTT broker
+  ** Using console script
+  cd qrgateway
+  barcode
+
+# State the music player
+I want to keep the music player very simple, tell it to play, pause, unpause, stop, volume. Functions that require state
+such as "Play Next", "Loop", "Play Previous", I want to implement these in the middleware (between the sensors and 
+the music player, put the state there). But, the player needs to report events
+* Event when the current item stops (either because it ended or was told to stop)
+* And report item that is playing and the current volume setting, maybe a copy of the playlist.
+
 # Useful links:
 * [How to generate and decode QR Codes](https://betterprogramming.pub/how-to-generate-and-decode-qr-codes-in-python-a933bce56fd0)
 * [Play music on MAC or Raspberry PI](https://www.pygame.org/ and https://pypi.org/project/pygame/)

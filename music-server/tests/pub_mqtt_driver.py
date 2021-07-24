@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 
 from comms import run_tasks_in_parallel
-from comms.mqtt_comms import SensorListener, MqttComms
+from comms import SensorListener, MqttComms
 from messages.music_control import MusicPlayCommand, MKommand, cmd_to_json
 
 

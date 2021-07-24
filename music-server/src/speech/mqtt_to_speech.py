@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 
 from comms import run_tasks_in_parallel_no_block
-from comms.mqtt_comms import SensorListener, MqttComms
+from comms import SensorListener, MqttComms
 from messages.music_control import TextToSpeech
 from messages.serdeser import cmd_from_json
 
