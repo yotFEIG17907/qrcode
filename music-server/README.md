@@ -219,4 +219,11 @@ the music player, put the state there). But, the player needs to report events
 * [Play music on MAC or Raspberry PI](https://www.pygame.org/ and https://pypi.org/project/pygame/)
 
 
+# Troubleshooting
 
+* The external storage suddenly disappeared. It was an 8GB I had lying around of unknown vintage, I guess it just failed.
+It showed up when I plugged it into the MAC but it had none of the new stuff on it; was all the old stuff. I switched
+  to a brand new 64 GB flash drive and copied MP3s and playlist onto it and it is working fine again; and it shows
+  up with the volume label I wrote to it on the MAC which the old one didn't another indication there was something
+  wrong with it.
+  
