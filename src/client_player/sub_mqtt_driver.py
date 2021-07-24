@@ -8,8 +8,9 @@ from pathlib import Path
 from client_player.music_player import MusicPlayer
 from comms import run_tasks_in_parallel_no_block
 from comms.mqtt_comms import SensorListener, MqttComms
-from messages.music_control import cmd_from_json, MusicPlayCommand, MusicStopCommand, MusicVolumeCommand, \
+from messages.music_control import MusicPlayCommand, MusicStopCommand, MusicVolumeCommand, \
     MusicPauseCommand, MusicUnpauseCommand
+from messages.serdeser import cmd_from_json
 
 """
 This is the music player, it receives commands from the mqtt broker and controls
