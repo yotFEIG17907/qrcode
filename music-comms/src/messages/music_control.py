@@ -8,6 +8,16 @@ class MusicPlayCommand(object):
 
 
 @dataclass
+class MusicNextCommand(object):
+    pass
+
+
+@dataclass
+class MusicPrevCommand(object):
+    pass
+
+
+@dataclass
 class MusicStopCommand(object):
     pass
 
@@ -32,6 +42,3 @@ class MusicVolumeCommand(object):
 class TextToSpeech(object):
     # Convert this text to speech
     payload: str
-
-
-

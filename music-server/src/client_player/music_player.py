@@ -8,13 +8,23 @@ import pygame
 
 @dataclass
 class MusicPlayer():
+    # The music player inside pygame might well be thread-safe
+    # but this class is not. In particular, next and prev depend
+    # on single-threadedness because they and the start method
+    # read and write mru_index
+
     # A list of paths to music files (mp3, wav, possibly others)
     playlist: List[Path]
     # The parent folder where the playlist file was located
     playlist_root: Path
 
+    # Holds index of the current or most recent item played
+    mru_index: int
+
     def __init__(self, playlist_path: Path):
         self.logger = logging.getLogger("comms.mqtt")
+        # Just start at the first item always
+        self.mru_index = 0
         # Increase the buffer from the default of 512 to eliminate the underrun warning message that occurs
         # when running on the Raspberry PI
         pygame.mixer.pre_init(buffer=2048)
@@ -51,8 +61,29 @@ class MusicPlayer():
             pygame.mixer.music.load(self.playlist[index])
             pygame.mixer.music.play()
             self.logger.info("Music loaded")
+            self.mru_index = index
         else:
             self.logger.warning("Specified item %s not found, skip it", str(self.playlist[index]))
+
+    def next(self) -> None:
+        """
+        Play the next item, wrapping around to 0 if the end it reached
+        :return: None
+        """
+        temp = self.mru_index + 1
+        if temp > len(self.playlist):
+            temp = 0
+        self.start(temp)
+
+    def prev(self) -> None:
+        """
+        Play the previous item, wrapping around to the end of the playlist if necessary
+        :return: None
+        """
+        temp = self.mru_index - 1
+        if temp < 0:
+            temp = len(self.playlist) - 1
+        self.start(temp)
 
     def stop(self) -> None:
         """

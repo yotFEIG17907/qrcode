@@ -9,7 +9,7 @@ from client_player.music_player import MusicPlayer
 from comms import run_tasks_in_parallel_no_block
 from comms.mqtt_comms import SensorListener, MqttComms
 from messages.music_control import MusicPlayCommand, MusicStopCommand, MusicVolumeCommand, \
-    MusicPauseCommand, MusicUnpauseCommand
+    MusicPauseCommand, MusicUnpauseCommand, MusicNextCommand, MusicPrevCommand
 from messages.serdeser import cmd_from_json
 
 """
@@ -44,6 +44,10 @@ class MusicCommandGatewayListener(SensorListener):
             self.logger.info("Message received Topic (%s) Type(%s) Payload (%s)", topic, type(cmd), str(cmd))
             if isinstance(cmd, MusicPlayCommand):
                 self.player.start(cmd.payload)
+            elif isinstance(cmd, MusicNextCommand):
+                self.player.next()
+            elif isinstance(cmd, MusicPrevCommand):
+                self.player.prev()
             elif isinstance(cmd, MusicStopCommand):
                 self.player.stop()
             elif isinstance(cmd, MusicPauseCommand):

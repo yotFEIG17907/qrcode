@@ -208,9 +208,10 @@ I just followed the instructions here [Install Mosquitto Server](https://pimylif
   barcode
 
 # State the music player
-I want to keep the music player very simple, tell it to play, pause, unpause, stop, volume. Functions that require state
-such as "Play Next", "Loop", "Play Previous", I want to implement these in the middleware (between the sensors and 
-the music player, put the state there). But, the player needs to report events
+I want to keep the music player very simple, tell it to play, pause, unpause, stop, volume. Next and Prev need it
+to keep the index of the item that is playing but that is not too big a deal.
+I want to implement more complex functions, such as to play a queue of items, in the middleware (between the sensors and 
+the music player, put the state there). But, the player needs to report events:
 * Event when the current item stops (either because it ended or was told to stop)
 * And report item that is playing and the current volume setting, maybe a copy of the playlist.
 
