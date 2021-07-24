@@ -1,4 +1,2 @@
-pygame==2.0.1
-paho-mqtt==1.5.1
 pytest==6.2.4
-jsonpickle==2.0.0
+
