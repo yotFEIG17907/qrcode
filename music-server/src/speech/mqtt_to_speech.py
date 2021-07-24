@@ -10,9 +10,10 @@ import subprocess
 from pathlib import Path
 
 from comms import run_tasks_in_parallel_no_block
-from comms.mqtt_comms import SensorListener
+from comms.mqtt_comms import SensorListener, MqttComms
 from messages.music_control import TextToSpeech
 from messages.serdeser import cmd_from_json
+from speech import do_text_to_speech
 
 """
 This is the music player, it receives commands from the mqtt broker and controls
@@ -22,15 +23,7 @@ index that is used as a reference to this playlist.
 """
 
 
-def do_text_to_speech(text: str) -> None:
-    """
-    Invoke a subprocess to cause flite to speak the text. This requires flite to have
-    been installed. This blocks until the speech has finished
-    :param text: Should be a short English phrase to be spoken
-    :return: None
-    """
-    cmd = 'flite -voice slt ' + f"\"{text}\""
-    subprocess.call(cmd, shell=True)
+
 
 
 class SpeechGatewayListener(SensorListener):

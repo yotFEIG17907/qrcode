@@ -5,6 +5,8 @@ from typing import List
 
 import pygame
 
+from speech import do_text_to_speech
+
 
 @dataclass
 class MusicPlayer():
@@ -47,6 +49,7 @@ class MusicPlayer():
         self.playlist = playlist
         self.logger.info("Loaded playlist from %s", str(playlist_path))
         self.logger.info("Playlist %s", playlist)
+        do_text_to_speech("Music Player is ready to go")
 
     def start(self, index: int) -> None:
         """
@@ -58,7 +61,11 @@ class MusicPlayer():
         if music_file.exists():
             self.logger.info("Stop playing current item, play %s",
                              str(self.playlist[index]))
-            pygame.mixer.music.load(self.playlist[index])
+            pygame.mixer.music.stop()
+            item:Path = self.playlist[index]
+            item_name = item.stem
+            do_text_to_speech(item_name)
+            pygame.mixer.music.load(item)
             pygame.mixer.music.play()
             self.logger.info("Music loaded")
             self.mru_index = index
@@ -90,6 +97,7 @@ class MusicPlayer():
         Stop the music
         :return: None
         """
+        do_text_to_speech("Stop")
         pygame.mixer.music.stop()
 
     def pause(self) -> None:
@@ -97,6 +105,7 @@ class MusicPlayer():
         Pause the music
         :return: None
         """
+        do_text_to_speech("Pause")
         pygame.mixer.music.pause()
 
     def unpause(self) -> None:
@@ -104,6 +113,7 @@ class MusicPlayer():
         Unpause the music
         :return: None
         """
+        do_text_to_speech("Resume")
         pygame.mixer.music.unpause()
 
     def set_volume(self, setting: int) -> None:
@@ -114,6 +124,7 @@ class MusicPlayer():
         :param setting: The new volume setting.
         :return: The old volume setting as a value between 0 and 100
         """
+        do_text_to_speech(f"Set volume {setting}")
         old_volume = pygame.mixer.music.get_volume()
         new_value = max(0, min(100, setting))
         pygame.mixer.music.set_volume(new_value / 100.0)
