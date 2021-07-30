@@ -6,7 +6,6 @@ import argparse
 import logging
 import logging.config
 import os
-import subprocess
 from pathlib import Path
 
 from comms import run_tasks_in_parallel_no_block
@@ -21,9 +20,6 @@ the sound hardware to play, stop or change the volume.
 It needs to be loaded with a playlist, a list of songs, the commands include an
 index that is used as a reference to this playlist.
 """
-
-
-
 
 
 class SpeechGatewayListener(SensorListener):

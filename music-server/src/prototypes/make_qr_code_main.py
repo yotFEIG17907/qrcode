@@ -17,5 +17,6 @@ def main():
 
     img.save("cnn_url.png")
 
+
 if __name__ == "__main__":
     main()

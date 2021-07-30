@@ -62,15 +62,49 @@ class MusicPlayer():
             self.logger.info("Stop playing current item, play %s",
                              str(self.playlist[index]))
             pygame.mixer.music.stop()
-            item:Path = self.playlist[index]
+            item: Path = self.playlist[index]
             item_name = item.stem
-            do_text_to_speech(item_name)
+            do_text_to_speech(f"Start playing song {item_name}")
             pygame.mixer.music.load(item)
             pygame.mixer.music.play()
             self.logger.info("Music loaded")
             self.mru_index = index
         else:
             self.logger.warning("Specified item %s not found, skip it", str(self.playlist[index]))
+
+    def set_playlist(self, index: int) -> None:
+        """
+        Keep playing the current song if any, but switch the playlist to the new
+        value if it is in range. The next item to be played will be from
+        the new list.
+        :param index: Identifies which playlist to make the active one.
+        :return: Nothing
+        """
+        # Not fully implemented at this time
+        self.logger.info("Select the playlist %d", index)
+        do_text_to_speech(f"Play list has been set to number {index}")
+
+    def do_status_report(self) -> None:
+        """
+        Report the playlist parameters
+        :param index: Identifies which playlist to make the active one.
+        :return: Nothing
+        """
+        # Not fully implemented at this time
+        self.logger.info("Reporting music player parameters")
+        # Another thread issue here, if the user changes the volume
+        # while the status is reported, this will be overwritten
+        # when the volume is reset to the value saved here. Really need
+        # a lock here so the volume cannot be changed until the speech is finished
+        curr_vol = self.get_volume()
+        self.set_volume(20)
+        msg = f"There is one playlist with {len(self.playlist)} items"
+        self.logger.info(msg)
+        do_text_to_speech(msg)
+        msg = f"Current song is {self.playlist[self.mru_index].stem.split(' ')[1]}"
+        self.logger.info(msg)
+        do_text_to_speech(msg)
+        self.set_volume(curr_vol * 100)
 
     def next(self) -> None:
         """
@@ -115,6 +149,9 @@ class MusicPlayer():
         """
         do_text_to_speech("Resume")
         pygame.mixer.music.unpause()
+
+    def get_volume(self):
+        return pygame.mixer.music.get_volume()
 
     def set_volume(self, setting: int) -> None:
         """

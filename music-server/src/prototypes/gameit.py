@@ -20,5 +20,5 @@ print("Change volume")
 pygame.mixer.music.set_volume(1.0)
 time.sleep(10.0)
 pygame.mixer.music.stop()
-#while pygame.mixer.music.get_busy() == True:
+# while pygame.mixer.music.get_busy() == True:
 #    pass

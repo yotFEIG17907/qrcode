@@ -9,7 +9,7 @@ from client_player.music_player import MusicPlayer
 from comms import run_tasks_in_parallel_no_block
 from comms.mqtt_comms import SensorListener, MqttComms
 from messages.music_control import MusicPlayCommand, MusicStopCommand, MusicVolumeCommand, \
-    MusicPauseCommand, MusicUnpauseCommand, MusicNextCommand, MusicPrevCommand
+    MusicPauseCommand, MusicUnpauseCommand, MusicNextCommand, MusicPrevCommand, MusicListCommand, MusicStatusReport
 from messages.serdeser import cmd_from_json
 
 """
@@ -56,6 +56,10 @@ class MusicCommandGatewayListener(SensorListener):
                 self.player.unpause()
             elif isinstance(cmd, MusicVolumeCommand):
                 self.player.set_volume(cmd.payload)
+            elif isinstance(cmd, MusicListCommand):
+                self.player.set_playlist(cmd.payload)
+            elif isinstance(cmd, MusicStatusReport):
+                self.player.do_status_report()
             else:
                 self.logger.warning("Unsupported cmd type %s", type(cmd))
         except Exception as e:

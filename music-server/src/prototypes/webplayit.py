@@ -13,14 +13,15 @@ pygame.mixer.music.set_volume(1.0)
 
 
 def playit():
-
     print("Loaded and playing, hear anything?")
     pygame.mixer.music.play()
     return b"Started"
 
+
 def stopit():
     pygame.mixer.music.stop()
     return b"Stopped"
+
 
 class MusicServer(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -39,6 +40,7 @@ class MusicServer(http.server.SimpleHTTPRequestHandler):
             self.wfile.flush()
         else:
             self.send_error(404, "Not Found")
+
 
 web_server = http.server.HTTPServer((HOST, PORT), MusicServer)
 

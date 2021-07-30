@@ -1,4 +1,3 @@
-
 """
 These commands report barcodes
 """

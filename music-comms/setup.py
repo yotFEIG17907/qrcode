@@ -10,7 +10,7 @@ setup(
     name='music_comms',
     version='1.0.0',
     packages=find_packages(where="./src"),
-    package_dir={'':'src'},
+    package_dir={'': 'src'},
     url='',
     install_requires=required,
     license='GPL License v3.0',
