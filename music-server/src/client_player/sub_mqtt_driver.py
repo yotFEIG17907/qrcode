@@ -11,6 +11,7 @@ from comms.mqtt_comms import SensorListener, MqttComms
 from messages.music_control import MusicPlayCommand, MusicStopCommand, MusicVolumeCommand, \
     MusicPauseCommand, MusicUnpauseCommand, MusicNextCommand, MusicPrevCommand, MusicListCommand, MusicStatusReport
 from messages.serdeser import cmd_from_json
+from musiclib.media_lib import MediaLib, MediaLibParsers
 
 """
 This is the music player, it receives commands from the mqtt broker and controls
@@ -27,9 +28,10 @@ class MusicCommandGatewayListener(SensorListener):
     which are used to command the music player.
     """
 
-    def __init__(self, playlist_path: Path):
+    def __init__(self, volume: Path):
         self.logger = logging.getLogger("comms.mqtt")
-        self.player = MusicPlayer(playlist_path=playlist_path)
+        media_lib: MediaLib = MediaLibParsers.parse_lib(volume)
+        self.player = MusicPlayer(media_lib=media_lib)
 
     def on_disconnect(self, reason: str):
         self.logger.debug("Disconnection event %s", reason)
@@ -77,8 +79,8 @@ def parse_arguments() -> argparse.Namespace:
                         help=f"Host and port of the MQTT broker, default is \"{default_mqtt_broker}\"")
     parser.add_argument("-t", "--cmd-topic", type=str, required=False, default=default_cmd_topic,
                         help=f"The topic to receive music commands, default is \"{default_cmd_topic}\"")
-    parser.add_argument("-p", "--playlist", type=Path, required=True,
-                        help="Path to the file that lists the music files to be played")
+    parser.add_argument("-v", "--volume", type=Path, required=True,
+                        help="Path to the volume that holds the music and the playlists")
     args = parser.parse_args()
     return args
 
@@ -100,9 +102,9 @@ def main():
     logger.info("Starting music player")
 
     client_id = args.client_id
-    playlist_path: Path = args.playlist
-    if not playlist_path.exists():
-        logger.warning("Specified playlist file not found %s", str(playlist_path))
+    volume: Path = args.volume
+    if not volume.exists():
+        logger.warning("Specified music volume not found %s", str(volume))
         return
     cert_path = None
     username = None
@@ -114,7 +116,7 @@ def main():
     cmd_topic = args.cmd_topic
     keep_alive_seconds = 20
 
-    test_listener = MusicCommandGatewayListener(playlist_path=playlist_path)
+    test_listener = MusicCommandGatewayListener(volume=volume)
     comms = MqttComms(client_id=client_id,
                       cert_path=cert_path,
                       username=username,
