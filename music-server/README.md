@@ -242,6 +242,54 @@ handle these easily. A ton of music can be put onto the USB stick and multiple p
 
 See the `musiclib` package for the source.
 
+# Service Discovery
+
+How to find the mqtt broker, all messages flow through this, but how to find it??
+
+Use Bonjour, mDNS (https://www.win.tue.nl/~johanl/educ/IoT-Course/mDNS-SD%20Tutorial.pdf)[https://www.win.tue.nl/~johanl/educ/IoT-Course/mDNS-SD%20Tutorial.pdf]
+using the avahi package. This was already installed for me on the RaspberryPI; if it is not there then use the above
+tutorial to learn how to install it.
+
+And this shows an example of how to advertise it:
+(http://dagrende.blogspot.com/2017/02/find-mqtt-broker-without-hard-coded-ip.html)[http://dagrende.blogspot.com/2017/02/find-mqtt-broker-without-hard-coded-ip.html]
+
+Create `sudo vi /etc/avahi/services/mosquitto.service` and put this in it:
+
+```xml
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<service-group>
+ <name replace-wildcards="yes">Mosquitto MQTT server on %h</name>
+  <service>
+   <type>_mqtt._tcp</type>
+   <port>1883</port>
+   <txt-record>info=Use this for pub/sub music related commands</txt-record>
+  </service>
+</service-group>
+```
+
+Almost immediately it shows up in the Bonjour Browser as described in the above link, and also using the avahi utilities:
+
+```bash
+pi@qrgateway:~/proj/qrgateway $ avahi-browse -rt _mqtt._tcp
++   eth0 IPv6 Mosquitto MQTT server on music-player         _mqtt._tcp           local
++   eth0 IPv4 Mosquitto MQTT server on music-player         _mqtt._tcp           local
+=   eth0 IPv6 Mosquitto MQTT server on music-player         _mqtt._tcp           local
+   hostname = [music-player.local]
+   address = [fd44:43db:78a1:1:d3cc:19ab:1bf1:1134]
+   port = [1883]
+   txt = ["info=Use this for pub/sub music related commands"]
+=   eth0 IPv4 Mosquitto MQTT server on music-player         _mqtt._tcp           local
+   hostname = [music-player.local]
+   address = [192.168.1.21]
+   port = [1883]
+   txt = ["info=Use this for pub/sub music related commands"]
+```
+And then use to find it using Python:
+
+```python
+TBD TBD TBD
+```
+
 # Road map
 
 * Another problem. For some classical music (Beethoven's 6th Symphony for example) the movements and hence the tracks 
@@ -250,6 +298,7 @@ tracks should run into each other, need a scheme to tell the player that a certa
 with no break.
 
 * A listing of the tracks would be useful, maybe Windows Media can do this.
+
 
 # Useful links:
 
