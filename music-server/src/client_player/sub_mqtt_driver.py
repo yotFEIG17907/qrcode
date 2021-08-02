@@ -3,6 +3,7 @@ import logging
 import logging.config
 import os
 import time
+import traceback
 from pathlib import Path
 
 from client_player.music_player import MusicPlayer
@@ -42,6 +43,7 @@ class MusicCommandGatewayListener(SensorListener):
     def on_message(self, topic: str, payload: bytes):
         try:
             cmd_str = payload.decode("utf-8")
+            self.logger.info("Payload %s", cmd_str)
             cmd = cmd_from_json(cmd_str)
             self.logger.info("Message received Topic (%s) Type(%s) Payload (%s)", topic, type(cmd), str(cmd))
             if isinstance(cmd, MusicPlayCommand):
@@ -65,7 +67,8 @@ class MusicCommandGatewayListener(SensorListener):
             else:
                 self.logger.warning("Unsupported cmd type %s", type(cmd))
         except Exception as e:
-            self.logger.error("Problem de-serialized message %s", str(e))
+            self.logger.error("Problem executing message %s, exception %s", cmd_str, str(e))
+            traceback.print_exc()
 
 
 def parse_arguments() -> argparse.Namespace:

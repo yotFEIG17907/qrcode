@@ -17,6 +17,17 @@ class PlaylistRef():
     # Holds a reference to the playlist itself
     playlist: Playlist
 
+    def get_item_by_id(self, id: int) -> Item:
+        if self.playlist.exists(id):
+            return self.playlist.get_item_by_id(id)
+        else:
+            raise ValueError(f"Provided id {id} is out of range, 0 to {self.playlist.size()}")
+
+    def get_title(self):
+        return self.playlist.title
+
+    def size(self):
+        return self.playlist.size()
 
 @dataclass
 class MusicPlayer():
@@ -79,7 +90,7 @@ class MusicPlayer():
             self.logger.info("Set the active playlist %d", index)
             self.active_list = PlaylistRef(index=index, playlist=self.media_lib.get_playlist_by_id(index))
             self.mru_item_index = 0
-            do_text_to_speech(f"Play list has been set to {self.active_list.playlist.title}")
+            do_text_to_speech(f"Play list has been set to {self.active_list.get_title()}")
         else:
             self.logger.warning("No playlist for this index: %d", index)
 
@@ -97,10 +108,10 @@ class MusicPlayer():
         # a lock here so the volume cannot be changed until the speech is finished
         curr_vol = self.get_volume()
         self.set_volume(20)
-        msg = f"Active Playlist {self.active_list.playlist.title} with {len(self.active_list.playlist.items)} items"
+        msg = f"Active Playlist {self.active_list.playlist.title} with {len(self.active_list.size())} items"
         self.logger.info(msg)
         do_text_to_speech(msg)
-        msg = f"Current song is {self.active_list.playlist[self.mru_item_index].stem.split(' ')[1]}"
+        msg = f"Current song is {self.active_list.get_item_by_id(self.mru_item_index).get_song_name()}"
         self.logger.info(msg)
         do_text_to_speech(msg)
         self.set_volume(curr_vol * 100)
@@ -111,7 +122,7 @@ class MusicPlayer():
         :return: None
         """
         temp = self.mru_item_index + 1
-        if temp > len(self.active_list.playlist.size()):
+        if temp >= self.active_list.playlist.size():
             temp = 0
         self.start(temp)
 
@@ -122,7 +133,7 @@ class MusicPlayer():
         """
         temp = self.mru_item_index - 1
         if temp < 0:
-            temp = len(self.active_list.playlist.size()) - 1
+            temp = self.active_list.playlist.size() - 1
         self.start(temp)
 
     def stop(self) -> None:

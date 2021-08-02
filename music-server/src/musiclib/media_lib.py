@@ -16,6 +16,9 @@ class Item():
     # Holds the name of the parent folder, which in some cases is the album name
     album_name: str
 
+    def get_song_name(self) -> str:
+        return self.src.stem
+
 
 @dataclass
 class Playlist():

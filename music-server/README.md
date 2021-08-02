@@ -242,6 +242,15 @@ handle these easily. A ton of music can be put onto the USB stick and multiple p
 
 See the `musiclib` package for the source.
 
+# Road map
+
+* Another problem. For some classical music (Beethoven's 6th Symphony for example) the movements and hence the tracks 
+follow onto each other without a gap. But the player is designed to play individual tracks and then stop. Not all
+tracks should run into each other, need a scheme to tell the player that a certain list of tracks must run into other
+with no break.
+
+* A listing of the tracks would be useful, maybe Windows Media can do this.
+
 # Useful links:
 
 * [How to generate and decode QR Codes](https://betterprogramming.pub/how-to-generate-and-decode-qr-codes-in-python-a933bce56fd0)
