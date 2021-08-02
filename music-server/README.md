@@ -217,7 +217,7 @@ here [Install Mosquitto Server](https://pimylifeup.com/raspberry-pi-mosquitto-mq
 * Barcode Reader Reads a barcode and publishes a command to the MQTT broker
   ** Using console script cd qrgateway barcode
 
-# State the music player
+# Music Player State
 
 I want to keep the music player very simple, tell it to play, pause, unpause, stop, volume. Next and Prev need it to
 keep the index of the item that is playing but that is not too big a deal. I want to implement more complex functions,
@@ -226,6 +226,21 @@ But, the player needs to report events:
 
 * Event when the current item stops (either because it ended or was told to stop)
 * And report item that is playing and the current volume setting, maybe a copy of the playlist.
+
+
+# Windows Media to rip CDs to MP3s
+Windows Media is much more flexible than iTunes in its ability to specify the destination for MP3s and the playlists (WPL)
+are essentially XML files and are relatively easy to parse with `lmxl`. Windows Media Player offers easier control 
+over where the files are ripped to; this they can be ripped directly to a
+USB drive, the encoder scheme can be selected. A playlist can be created and uses WPL format although there does seem to
+be an option for M3U. Once the RIP settings are chosen. Click Organize menu item to add more library locations such as
+the external USB drive then once this exists the RIP settings can be configured to send to the USB drive.)
+
+A ton of tracks can be ripped to the USB drive then playlists can be created and added. The file paths in the playlist
+are relative to the playlist location which is really useful. They are Windows paths with backslashes but Pathlib can
+handle these easily. A ton of music can be put onto the USB stick and multiple playlists.
+
+See the `musiclib` package for the source.
 
 # Useful links:
 
