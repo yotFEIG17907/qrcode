@@ -5,7 +5,7 @@ from time import sleep
 
 from zeroconf import ServiceBrowser, Zeroconf, ServiceListener, ServiceInfo
 
-from discovery import FindServices, ServiceInfoParser
+from discovery import FindServices, ServiceInfoParser, get_service_host_port_block
 
 
 class ZCListener(ServiceListener):
@@ -38,6 +38,9 @@ try:
             sleep(5)
     parser = ServiceInfoParser(info)
     print("info", parser.get_host_port())
+
+    hostname, port = get_service_host_port_block(type=type, name=name)
+    print(f"As tuple {hostname}:{port}")
     input("Press enter to exit...\n\n")
 finally:
     zeroconf.close()

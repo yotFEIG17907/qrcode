@@ -9,6 +9,7 @@ from pathlib import Path
 from client_player.music_player import MusicPlayer
 from comms import run_tasks_in_parallel_no_block
 from comms.mqtt_comms import SensorListener, MqttComms
+from discovery import get_service_host_port_block
 from messages.music_control import MusicPlayCommand, MusicStopCommand, MusicVolumeCommand, \
     MusicPauseCommand, MusicUnpauseCommand, MusicNextCommand, MusicPrevCommand, MusicListCommand, MusicStatusReport
 from messages.serdeser import cmd_from_json
@@ -72,14 +73,17 @@ class MusicCommandGatewayListener(SensorListener):
 
 
 def parse_arguments() -> argparse.Namespace:
-    default_mqtt_broker = "localhost:1883"
+    # default_mqtt_broker = "localhost:1883"
+    default_mqtt_service_name = "DYLAN MQTT Server"
     default_cmd_topic = "kontrol/music"
     parser = argparse.ArgumentParser(description="Music Player")
     parser.add_argument("-l", "--log-config", type=Path, required=True, help="Path to logging configuration file")
     parser.add_argument("-id", "--client-id", type=str, required=False, default="music-player",
                         help="Client ID to use, must be unique, default is \"music-player\"")
-    parser.add_argument("-broker", "--mqtt-broker", type=str, required=False, default=default_mqtt_broker,
-                        help=f"Host and port of the MQTT broker, default is \"{default_mqtt_broker}\"")
+    parser.add_argument("-broker", "--mqtt-broker", type=str, required=False, default=None,
+                        help="Host and port of the MQTT broker, takes precedence if both this and service-name are provided")
+    parser.add_argument("-s", "--service-name", type=str, required=False, default=default_mqtt_service_name,
+                        help=f"Service name for the MQTT Broker, will be looked up using Bonjour, use only if mqtt-broker not provided")
     parser.add_argument("-t", "--cmd-topic", type=str, required=False, default=default_cmd_topic,
                         help=f"The topic to receive music commands, default is \"{default_cmd_topic}\"")
     parser.add_argument("-v", "--volume", type=Path, required=True,
@@ -112,9 +116,17 @@ def main():
     cert_path = None
     username = None
     password = None
-    hostport = args.mqtt_broker.split(':')
-    hostname = hostport[0]
-    port = int(hostport[1])
+    if args.mqtt_broker is not None:
+        hostport = args.mqtt_broker.split(':')
+        hostname = hostport[0]
+        port = int(hostport[1])
+    elif args.service_name is not None:
+        # look MQTT broker up using Bonjour / Zeroconf
+        type = "_mqtt._tcp.local."
+        name = args.service_name
+        hostname, port = get_service_host_port_block(type=type, name=name, logger=logger)
+    else:
+        print("Must provide either MQTT Broker host/port or the Bonjour name of the service")
     # This topic is for music controlling messages
     cmd_topic = args.cmd_topic
     keep_alive_seconds = 20

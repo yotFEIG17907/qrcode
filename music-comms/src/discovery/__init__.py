@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from zeroconf import ServiceInfo, Zeroconf
 
 """
@@ -13,6 +15,9 @@ class FindServices():
 
     def __init__(self):
         self.zc = Zeroconf()
+
+    def close(self):
+        self.zc.close()
 
     def get_service_info(self, type: str, name: str) -> ServiceInfo:
         """
@@ -39,3 +44,32 @@ class ServiceInfoParser():
 
     def get_host_port(self) -> str:
         return f"{self.info.server}:{self.info.port}"
+
+    def get_host_port_tuple(self) -> Tuple[str, int]:
+        return self.info.server, self.info.port
+
+
+def get_service_host_port_block(type: str, name: str, logger) -> Tuple[str, int]:
+    """
+    Block until the service is available
+    :param type: The service type
+    :param name: The server name
+    :param logger: Feedback messages logged through here, can be None
+    :return: A tuple of the hostname (str) and port (int)
+    """
+    finder = FindServices()
+    try:
+        while True:
+            if logger is not None:
+                logger.info("Zeroconf, look up service type (%s) name (%s)", type, name)
+            info = finder.get_service_info(type=type, name=name)
+            if info is not None:
+                hostname, port = ServiceInfoParser(info).get_host_port_tuple()
+                break
+            else:
+                logger.info("Not found, try again")
+    except Exception as e:
+        logger.error("Unexpected exception %s", str(e))
+    finally:
+        finder.close()
+    return hostname, port
