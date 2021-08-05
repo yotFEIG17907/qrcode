@@ -2,3 +2,5 @@ pytest==6.2.4
 qrcode==7.0
 pygame==2.0.1
 lxml==4.6.3
+zeroconf==0.33.2
+
