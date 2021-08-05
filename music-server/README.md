@@ -284,11 +284,11 @@ pi@qrgateway:~/proj/qrgateway $ avahi-browse -rt _mqtt._tcp
    port = [1883]
    txt = ["info=Use this for pub/sub music related commands"]
 ```
-And then use to find it using Python:
+And then use python-zeroconf to find it using Python. Zeroconf supports either a synchronous query on demand
+or an asynchronous ServiceBrowser that runs a background thread and informs a listener when services matching
+a standing query are added, updated or removed (e.g. because they stop)
 
-```python
-TBD TBD TBD
-```
+Look in this package: `src/discovery` and in this module to see examples of both `tests/find_service.py`
 
 # Road map
 

@@ -22,11 +22,9 @@ class ZCListener(ServiceListener):
         print("Updated service:", "type:", type, "name:", name, "info", info, info.server, info.port)
 
 
-zeroconf = Zeroconf()
-listener = ZCListener()
-browser = ServiceBrowser(zeroconf, "_mqtt._tcp.local.", listener)
+# Demonstrate the query method, make a query to look up the service on demand
+service_finder = FindServices()
 try:
-    service_finder = FindServices()
     type = "_mqtt._tcp.local."
     name = "DYLAN MQTT Server"
     while True:
@@ -41,6 +39,15 @@ try:
 
     hostname, port = get_service_host_port_block(type=type, name=name)
     print(f"As tuple {hostname}:{port}")
+finally:
+    service_finder.close()
+
+# The listener approach, a service browser runs a thread in the background
+# and informs a listener when there is a change.
+try:
+    zeroconf = Zeroconf()
+    listener = ZCListener()
+    browser = ServiceBrowser(zeroconf, "_mqtt._tcp.local.", listener)
     input("Press enter to exit...\n\n")
 finally:
     zeroconf.close()

@@ -49,9 +49,9 @@ class ServiceInfoParser():
         return self.info.server, self.info.port
 
 
-def get_service_host_port_block(type: str, name: str, logger) -> Tuple[str, int]:
+def get_service_host_port_block(type: str, name: str, logger = None) -> Tuple[str, int]:
     """
-    Block until the service is available
+    Block until the service is found
     :param type: The service type
     :param name: The server name
     :param logger: Feedback messages logged through here, can be None
