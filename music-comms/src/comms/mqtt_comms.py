@@ -90,7 +90,18 @@ class MqttComms:
         self.logger = logging.getLogger("comms.mqtt")
         self.qos = 1  # At least once
 
-    def connect_and_run(self, keep_alive_seconds: int):
+    def connect_and_run(self, keep_alive_seconds: int) -> None:
+        """
+        Connect once and then call the client loop_forever() function which will
+        handle everything, even re-connecting automatically. The downside of the
+        automatic connection is that it won't use zeroconf to look up the
+        mqtt broker host and port if this has changed. Need to stop and destroy this
+        instance of mqtt_comms and start a new one if there is an update to the mqtt host and
+        port.
+        :param keep_alive_seconds: Number of seconds of silence before a keep-alive message
+        is setn
+        :return: None
+        """
         self.logger.info("Start the connection attempt to %s:%d", self.hostname, self.port)
         # Loop until initial connection is made and while the running flag is still true
         retry_period_seconds = 5

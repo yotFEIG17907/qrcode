@@ -295,9 +295,15 @@ Look in this package: `src/discovery` and in this module to see examples of both
 * Another problem. For some classical music (Beethoven's 6th Symphony for example) the movements and hence the tracks 
 follow onto each other without a gap. But the player is designed to play individual tracks and then stop. Not all
 tracks should run into each other, need a scheme to tell the player that a certain list of tracks must run into other
-with no break.
+with no break. Or provide a mode command that tells player to stop after a given track or keep going with a configurable
+delay.
 
 * A listing of the tracks would be useful, maybe Windows Media can do this.
+
+* The mqtt_comms class uses a function in Paho MQTT called loop_forever() after the initial connection has been made, this automatically
+handles re-connection which is great. But what if the host running the broker changes, this will not be picked up until the next
+time the program re-starts. Making it automatically change the mqtt broker and port and re-connect will require a major change,
+the mqtt connection will need to be triggered by add or updates to the service, a totally different flow.
 
 
 # Useful links:

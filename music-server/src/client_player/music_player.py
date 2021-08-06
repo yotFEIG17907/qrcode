@@ -1,16 +1,15 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
 
 import pygame
 
 from musiclib.media_lib import MediaLib, Playlist, Item
 from speech import do_text_to_speech
 
+
 @dataclass
 class PlaylistRef():
-
     # Holds the index of the playlist in the media lib
     index: int
 
@@ -23,11 +22,20 @@ class PlaylistRef():
         else:
             raise ValueError(f"Provided id {id} is out of range, 0 to {self.playlist.size()}")
 
+    def exists(self, id: int) -> bool:
+        """
+        Return true if this playlist has an item with the specified ID
+        :param id: An index into the playlist
+        :return: True if there is an item in the playlist with this index.
+        """
+        return self.playlist.exists(id)
+
     def get_title(self):
         return self.playlist.title
 
     def size(self):
         return self.playlist.size()
+
 
 @dataclass
 class MusicPlayer():
@@ -64,19 +72,24 @@ class MusicPlayer():
         :return: Nothing
         """
         # Get the item from the active playlist
-        music_file_item: Item = self.active_list.get_item_by_id(index)
-        item: Path = music_file_item.src
-        if item.exists():
-            # Stop playing current item, if any
-            pygame.mixer.music.stop()
-            item_name = item.name
-            do_text_to_speech(f"Start playing song {item_name}")
-            pygame.mixer.music.load(item)
-            pygame.mixer.music.play()
-            self.logger.info("Music loaded")
-            self.mru_item_index = index
+        if self.active_list.exists(index):
+            music_file_item: Item = self.active_list.get_item_by_id(index)
+            item: Path = music_file_item.src
+            if item.exists():
+                # Stop playing current item, if any
+                pygame.mixer.music.unload()
+                item_name = item.name
+                do_text_to_speech(f"Start playing song {item_name}")
+                pygame.mixer.music.load(item)
+                pygame.mixer.music.play()
+                self.logger.info("Music loaded")
+                self.mru_item_index = index
+            else:
+                self.logger.warning("Specified item %s not found, skip it", str(item))
         else:
-            self.logger.warning("Specified item %s not found, skip it", str(item))
+            msg = f"No playlist for this index {index}"
+            do_text_to_speech(msg)
+            self.logger.warning(msg)
 
     def set_playlist(self, index: int) -> None:
         """
@@ -92,7 +105,9 @@ class MusicPlayer():
             self.mru_item_index = 0
             do_text_to_speech(f"Play list has been set to {self.active_list.get_title()}")
         else:
-            self.logger.warning("No playlist for this index: %d", index)
+            msg = f"No playlist for this index {index}"
+            do_text_to_speech(msg)
+            self.logger.warning(msg)
 
     def do_status_report(self) -> None:
         """
@@ -141,15 +156,16 @@ class MusicPlayer():
         Stop the music
         :return: None
         """
-        do_text_to_speech("Stop")
+        do_text_to_speech("Stop the player")
         pygame.mixer.music.stop()
+        pygame.mixer.music.unload()
 
     def pause(self) -> None:
         """
         Pause the music
         :return: None
         """
-        do_text_to_speech("Pause")
+        do_text_to_speech("Pause the player")
         pygame.mixer.music.pause()
 
     def unpause(self) -> None:
@@ -157,7 +173,7 @@ class MusicPlayer():
         Unpause the music
         :return: None
         """
-        do_text_to_speech("Resume")
+        do_text_to_speech("Resume the player")
         pygame.mixer.music.unpause()
 
     def get_volume(self):
