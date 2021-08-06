@@ -106,9 +106,9 @@ def main():
 
     logging.config.fileConfig(logging_configuration, disable_existing_loggers=False)
     logger = logging.getLogger("comms.mqtt")
-    logger.info("Starting music player")
+    logger.info("Starting music player %s", "v2")
 
-    client_id = args.client_id
+    client_id = f"{args.client_id}-{int(time.time())}"
     volume: Path = args.volume
     if not volume.exists():
         logger.warning("Specified music volume not found %s", str(volume))
@@ -116,15 +116,16 @@ def main():
     cert_path = None
     username = None
     password = None
-    if args.mqtt_broker is not None:
-        hostport = args.mqtt_broker.split(':')
-        hostname = hostport[0]
-        port = int(hostport[1])
-    elif args.service_name is not None:
+    # Try finding the broker using Zeroconf first
+    if args.service_name is not None:
         # look MQTT broker up using Bonjour / Zeroconf
         type = "_mqtt._tcp.local."
         name = args.service_name
         hostname, port = get_service_host_port_block(type=type, name=name, logger=logger)
+    elif args.mqtt_broker is not None:
+        hostport = args.mqtt_broker.split(':')
+        hostname = hostport[0]
+        port = int(hostport[1])
     else:
         print("Must provide either MQTT Broker host/port or the Bonjour name of the service")
     # This topic is for music controlling messages
@@ -140,7 +141,7 @@ def main():
                       port=port,
                       cmd_topic=cmd_topic,
                       msg_listener=test_listener)
-    logger.info("Starting to listen to broker %s, cmd topic: %s", args.mqtt_broker, cmd_topic)
+    logger.info("Starting to listen to broker %s:%d, cmd topic: %s", hostname, port, cmd_topic)
 
     def shutdown(run_period_seconds: int):
         """

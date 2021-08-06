@@ -1,6 +1,9 @@
 """
 A class to wrap dealing with the MQTT broker
 Background reading: http://www.steves-internet-guide.com/into-mqtt-python-client/
+Note: if connection is successful but then fails almost immediately on the first subscribe
+action with errors that end with "Out of Memory", then check that the client id is unique,
+you could easily be running more than instance of the same program using the same client ID.
 """
 import logging
 import time
