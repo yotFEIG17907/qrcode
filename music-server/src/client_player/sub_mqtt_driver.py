@@ -19,7 +19,10 @@ from musiclib.media_lib import MediaLib, MediaLibParsers
 This is the music player, it receives commands from the mqtt broker and controls
 the sound hardware to play, stop or change the volume.
 It needs to be loaded with a playlist, a list of songs, the commands include an
-index that is used as a reference to this playlist.
+index that is used as a reference to this playlist. It takes a list of 
+volumes which it searches for playlists. Use a command like this to run on the RaspberryPI
+
+ls -d --quoting-style=escape /media/pi/* | xargs music_player -l /home/pi/proj/music_player/music-server/conf/no-logging.config -v
 """
 
 
