@@ -305,6 +305,20 @@ handles re-connection which is great. But what if the host running the broker ch
 time the program re-starts. Making it automatically change the mqtt broker and port and re-connect will require a major change,
 the mqtt connection will need to be triggered by add or updates to the service, a totally different flow.
 
+* Use crontab to run the python scripts from boot-up
+(https://www.tomshardware.com/how-to/run-script-at-boot-raspberry-pi)[https://www.tomshardware.com/how-to/run-script-at-boot-raspberry-pi]
+
+For `crontab` need a single command to run the programs, this is the one for the music-server. One of the volume names contains
+a space which caused some problems, had to specify quoting style to escape the space and then xargs to pass the list of paths
+as separate items to the script; using the usual back tick scheme resulted in python or the shell splitting the problematic
+volume name at the space.
+
+The music player was modified to take a list of volumes; for the RaspberryPI the USB sticks all appear under `/media/pi`
+and this allows them all to be searched for playlists.
+
+```python
+ls -d --quoting-style=escape /media/pi/* | xargs music_player -l /home/pi/proj/music_player/music-server/conf/no-logging.config -v
+```
 
 # Useful links:
 

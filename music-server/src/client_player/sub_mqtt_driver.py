@@ -1,10 +1,10 @@
 import argparse
 import logging
 import logging.config
-import os
 import time
 import traceback
 from pathlib import Path
+from typing import List
 
 from client_player.music_player import MusicPlayer
 from comms import run_tasks_in_parallel_no_block
@@ -30,9 +30,9 @@ class MusicCommandGatewayListener(SensorListener):
     which are used to command the music player.
     """
 
-    def __init__(self, volume: Path):
+    def __init__(self, volumes: List[Path]):
         self.logger = logging.getLogger("comms.mqtt")
-        media_lib: MediaLib = MediaLibParsers.parse_lib(volume)
+        media_lib: MediaLib = MediaLibParsers.parse_lib(volumes)
         self.player = MusicPlayer(media_lib=media_lib)
 
     def on_disconnect(self, reason: str):
@@ -86,8 +86,9 @@ def parse_arguments() -> argparse.Namespace:
                         help=f"Service name for the MQTT Broker, will be looked up using Bonjour, use only if mqtt-broker not provided")
     parser.add_argument("-t", "--cmd-topic", type=str, required=False, default=default_cmd_topic,
                         help=f"The topic to receive music commands, default is \"{default_cmd_topic}\"")
-    parser.add_argument("-v", "--volume", type=Path, required=True,
-                        help="Path to the volume that holds the music and the playlists")
+    parser.add_argument("-v", "--volumes", nargs="+", type=Path, required=True,
+                        help="One or more Paths to volumes that hold the music and the playlists, They must all exist."
+                             "Use space as the separator")
     args = parser.parse_args()
     return args
 
@@ -101,17 +102,21 @@ def main():
         print("Path to logging configuration not found: ", str(logging_configuration))
         return
 
-    log_folder = "target/logs"
-    os.makedirs(log_folder, exist_ok=True)
-
     logging.config.fileConfig(logging_configuration, disable_existing_loggers=False)
     logger = logging.getLogger("comms.mqtt")
     logger.info("Starting music player %s", "v2")
 
     client_id = f"{args.client_id}-{int(time.time())}"
-    volume: Path = args.volume
-    if not volume.exists():
-        logger.warning("Specified music volume not found %s", str(volume))
+    volumes: List[Path] = args.volumes
+    vc = 0
+    for volume in volumes:
+        if volume.exists():
+            vc += 1
+            logger.info("Music volume found %s", str(volume))
+        else:
+            logger.warning("Specified music volume not found %s", str(volume))
+    if vc < len(volumes):
+        logger.warning("Not all specified volumes found, will exit")
         return
     cert_path = None
     username = None
@@ -132,7 +137,7 @@ def main():
     cmd_topic = args.cmd_topic
     keep_alive_seconds = 20
 
-    test_listener = MusicCommandGatewayListener(volume=volume)
+    test_listener = MusicCommandGatewayListener(volumes=volumes)
     comms = MqttComms(client_id=client_id,
                       cert_path=cert_path,
                       username=username,

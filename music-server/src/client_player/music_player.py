@@ -63,7 +63,7 @@ class MusicPlayer():
         pygame.mixer.pre_init(buffer=2048)
         pygame.mixer.init()
         self.logger.info("Loaded media library %s", media_lib.get_info())
-        do_text_to_speech("Music Player is ready to go")
+        do_text_to_speech(f"Music Player is ready to go. Found {len(media_lib.playlists)} playlists")
 
     def start(self, index: int) -> None:
         """
