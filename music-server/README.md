@@ -292,7 +292,7 @@ Look in this package: `src/discovery` and in this module to see examples of both
 
 # Running the programs on re-boot
 * Use crontab to run the python scripts from boot-up
-(https://www.tomshardware.com/how-to/run-script-at-boot-raspberry-pi)[https://www.tomshardware.com/how-to/run-script-at-boot-raspberry-pi]
+[https://www.tomshardware.com/how-to/run-script-at-boot-raspberry-pi](https://www.tomshardware.com/how-to/run-script-at-boot-raspberry-pi)
 
 For `crontab` need a single command to run the programs, this is the one for the music-server. One of the volume names contains
 a space which caused some problems, had to specify quoting style to escape the space and then xargs to pass the list of paths
