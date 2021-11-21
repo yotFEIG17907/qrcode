@@ -193,7 +193,9 @@ here [Install Mosquitto Server](https://pimylifeup.com/raspberry-pi-mosquitto-mq
 
 # Running the system
 
-* Music Player Node This has the music player and the mqtt broker.
+Reminder, in my setup I have a Raspberry PI 4 running the Music player and MQTT broker; this connects via a cable to small Bose music player. I also have a Raspberry PI 3 that runs either or both of a web server (the HTTP to MQTT bridge) or the Barcode reader. 
+
+* Music Player Node This has the music player and the mqtt broker. On my system the host is: `music-player.local`
   ** Using Python explicitly
   ```bash
   cd src
@@ -203,7 +205,7 @@ here [Install Mosquitto Server](https://pimylifeup.com/raspberry-pi-mosquitto-mq
   ```bash
   music_player -l ../conf/logging.config -p /media/pi/9016-4EF8/dylan_playlist.txt  
   ```
-* QR Gateway Provides the web server interface
+* QR Gateway Provides the web server interface. On my system the host is: `qrgateway.local`. The URL for the Swagger docs is http://qrgateway.local:8004
   ** Using Python explicitly
   ```bash
   # This uses the defaults for everything. Need to add command-line arguments to this one
@@ -214,8 +216,13 @@ here [Install Mosquitto Server](https://pimylifeup.com/raspberry-pi-mosquitto-mq
   cd proj/qrgateway
   qr_gateway
   ```
-* Barcode Reader Reads a barcode and publishes a command to the MQTT broker
-  ** Using console script cd qrgateway barcode
+  
+* Barcode Reader Reads a barcode and publishes a command to the MQTT broker On my system the host is `qrgateway.local`. Yes, the barcode reader is running on the same host as the QR Gateway (the HTTP to MQTT broker).
+  ** Using console script 
+  ```bash
+  cd qrgateway
+  barcode
+  ```
 
 # Music Player State
 
