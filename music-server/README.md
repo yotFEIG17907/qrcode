@@ -37,7 +37,7 @@ This subscribes to the topic and executes actions specified in the messages, e.g
 
 Configuration
 
-* The host and port of the AMQ broker
+* The host and port of the MQTT broker
 * The topic to subscribe to
 * The playlist that maps index to Audio file
 
