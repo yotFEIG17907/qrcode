@@ -193,9 +193,11 @@ here [Install Mosquitto Server](https://pimylifeup.com/raspberry-pi-mosquitto-mq
 
 # Running the system
 
-Reminder, in my setup I have a Raspberry PI 4 running the Music player and MQTT broker; this connects via a cable to small Bose music player. I also have a Raspberry PI 3 that runs either or both of a web server (the HTTP to MQTT bridge) or the Barcode reader. 
+Reminder, in my setup I have a Raspberry PI 4 running the Music player and MQTT broker; this connects via a cable to small Bose music player. I also have a Raspberry PI 3 that runs either or both of a web server (the HTTP to MQTT bridge) or the Barcode reader. The two PIs are connected to a network switch which is connected to the nearest satellite of the house WiFi network; the main house router provides IP addresses via DHCP.
 
-* Music Player Node This has the music player and the mqtt broker. On my system the host is: `music-player.local`
+I also have the Bose, the two PIs and a network switch connected to power strip, turn them all at once. 
+
+* Music Player Node This has the music player and the mqtt broker. On my system the host is: `music-player.local`. Music is loaded onto USB flash drives plugged into this PI. It looks for play lists when it starts up; the player says where to find the music.
   ** Using Python explicitly
   ```bash
   cd src
