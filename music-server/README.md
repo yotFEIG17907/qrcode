@@ -189,7 +189,6 @@ here [Install Mosquitto Server](https://pimylifeup.com/raspberry-pi-mosquitto-mq
   # Testing
   # Could use the client scripts but I just used the Python application and it worked
   ```
-*
 
 # Running the system
 
@@ -198,33 +197,53 @@ Reminder, in my setup I have a Raspberry PI 4 running the Music player and MQTT 
 I also have the Bose, the two PIs and a network switch connected to power strip, turn them all at once. 
 
 * Music Player Node This has the music player and the mqtt broker. On my system the host is: `music-player.local`. Music is loaded onto USB flash drives plugged into this PI. It looks for play lists when it starts up; the player says where to find the music.
-  ** Using Python explicitly
+  * Using Python explicitly
   ```bash
   cd src
   python3 client_player/sub_mqtt_driver.py -l ../conf/logging.config -p /media/pi/9016-4EF8/dylan_playlist.txt
   ```
-  ** Or using the console script
+  * Or using the console script
   ```bash
   music_player -l ../conf/logging.config -p /media/pi/9016-4EF8/dylan_playlist.txt  
   ```
 * QR Gateway Provides the web server interface. On my system the host is: `qrgateway.local`. The URL for the Swagger docs is http://qrgateway.local:8004
-  ** Using Python explicitly
+  * Using Python explicitly
   ```bash
   # This uses the defaults for everything. Need to add command-line arguments to this one
   python3 src/main.py 
   ```
-  ** Or using console script
+  * Or using console script
   ```bash
   cd proj/qrgateway
   qr_gateway
   ```
   
-* Barcode Reader Reads a barcode and publishes a command to the MQTT broker On my system the host is `qrgateway.local`. Yes, the barcode reader is running on the same host as the QR Gateway (the HTTP to MQTT broker).
-  ** Using console script 
+* Barcode Gateway reads a barcode and publishes a command to the MQTT broker On my system the host is `qrgateway.local`. Yes, the barcode reader is running on the same host as the QR Gateway (the HTTP to MQTT broker).
+  * Using console script 
+  ```bash
+  cd qrgateway
+  bc_gateway
+  ```
+* There is also Barcode Reader that just reads the barcode and prints out the command, useful for debugging.
+  * Using the console script
   ```bash
   cd qrgateway
   barcode
   ```
+
+* Troubleshooting
+As soon as the Music Player is started, there should be voice feedback. Things to check:
+  * If no sound, check the Music Player and Bose are powered up
+  * Is the audio cable connecting the Music Player PI to the Bose?
+  * Was the Music Player/Server program started?
+  * Start the gateway and try using some of the REST calls and listen for feedback from the Bose.
+  * If nothing happens from the barcode reader:
+    * Does it need to be charged? The blue light should be on all the time even when the button is pushed, do you see the red line, is on the barcode? Connect its PSU and let it charge, can take hours.
+    * Start the "barcode" program and check that you see the commands as the barcodes are scanned.
+    * Did you start the "bc_gateway" program, check its log, does it say it can communicate with the MQTT broker?
+    * Is the MQTT broker running, does the Music Player, the qr_gateway and bc_gateway all say they can talk to the MQTT broker?
+
+
 
 # Music Player State
 
