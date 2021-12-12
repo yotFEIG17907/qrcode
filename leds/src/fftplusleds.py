@@ -1,12 +1,46 @@
+import numpy as np
 import time
 
 import pyaudio
 from numpy import linspace, frombuffer, ndarray, amax
 from scipy import average
-from scipy.fftpack import fft, fftfreq
+from scipy.fftpack import fft
+import board
+import adafruit_ws2801
+# FFT On the microphone input plus LEDS
 
-# Enable blip, beep, and reset debug output
 debug = True
+
+# Set up for the LEDs
+SDI = board.MOSI
+CLK = board.SCLK
+bright = 1.0
+
+# Configure the count of pixels:
+num_pixels = 100
+
+pixels = adafruit_ws2801.WS2801(clock=CLK, data=SDI, n=num_pixels, brightness=bright, auto_write=False)
+print("Fill 255")
+pixels.fill((255,0,0))
+pixels.show()
+time.sleep(0.1)
+print("Fill next")
+pixels.fill((0,255,0))
+pixels.show()
+time.sleep(0.1)
+print("And next..")
+pixels.fill((0,0,255))
+pixels.show()
+time.sleep(0.1)
+pixels.fill((0,0,0))
+pixels.show()
+time.sleep(0.1)
+for i in range(num_pixels):
+    pixels[i] = (255,0,0)
+    pixels.show()
+    time.sleep(0.05)
+pixels.fill((0,0,0))
+pixels.show()
 
 # This is the index of the microphone
 input_device_index = 2
@@ -51,7 +85,7 @@ def get_fft(data: ndarray):
     return frequencies, intensity
 
 
-reporting_bands_interval = 25
+reporting_bands_interval = 100
 reporting_fps_interval = 100
 counter = 0
 # Note: For Python3 use // when dividing int by int to get an int
@@ -88,11 +122,20 @@ while True:
     # Another approach, pick the maximum
     # intensity_slices = [amax(intensity[s]) for s in audio_bands]
     # Another approach, pick the same number of bands as there are LEDs
-    N = (NUM_SAMPLES // 2) // 100
-    intensity_slices = [average(intensity[n:n+N]) for n in range(0, len(intensity), N)]
+    N = (NUM_SAMPLES // 2) // num_pixels
+    intensity_slices = [average(intensity[n:n+N]) for n in range(1, len(intensity), N)]
+    intensity_slices = intensity_slices[0:num_pixels]
+    max_intensity = amax(intensity_slices)
+    intensity_slices = ((intensity_slices / max_intensity) * 255).astype(np.int)
+    # Threshold
+    threshold = 40
+    intensity_slices[intensity_slices < threshold] = 0
+    for i, value in np.ndenumerate(intensity_slices):
+        pixels[i[0]] = (value, value, value)
+    pixels.show()
     # Report intensity
     if counter % reporting_bands_interval == 0:
-        print(len(intensity), len(freqs), intensity_slices)
+        print(len(intensity_slices), len(freqs), intensity_slices)
 
     # Report the frames per second
     if counter % reporting_fps_interval == 0:

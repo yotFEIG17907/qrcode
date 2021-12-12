@@ -34,7 +34,7 @@ def wheel(pos):
     return (r, g, b)
 
 
-def rainbow_cycle(wait):
+def rainbow_cycle(pixels, num_pixels, wait):
     for j in range(255):
         for i in range(num_pixels):
             pixel_index = (i * 256 // num_pixels) + j
@@ -65,4 +65,4 @@ while True:
     pixels.show()
     time.sleep(1)
 
-    rainbow_cycle(0.001)  # rainbow cycle with 1ms delay per step 
+    rainbow_cycle(pixels, num_pixels, 0.001)  # rainbow cycle with 1ms delay per step
