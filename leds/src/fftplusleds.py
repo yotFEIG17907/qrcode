@@ -1,13 +1,17 @@
-import numpy as np
 import time
 
-import pyaudio
-from numpy import linspace, frombuffer, ndarray, amax
-from scipy import average
-from scipy.fftpack import fft
-import board
+import signal
 import adafruit_ws2801
+import board
+import numpy as np
+import pyaudio
+from numpy import linspace, frombuffer, ndarray, amax, multiply, clip, float32, delete, log10, hamming, float64
+from numpy.fft import fft, fftfreq
+from scipy import average, log
+
 # FFT On the microphone input plus LEDS
+# Based on this https://bitbucket.org/togiles/lightshowpi/src/master/py/fft.py
+# and this: https://jared.geek.nz/2013/jan/sound-reactive-led-lights
 
 debug = True
 
@@ -20,36 +24,57 @@ bright = 1.0
 num_pixels = 100
 
 pixels = adafruit_ws2801.WS2801(clock=CLK, data=SDI, n=num_pixels, brightness=bright, auto_write=False)
-print("Fill 255")
-pixels.fill((255,0,0))
-pixels.show()
-time.sleep(0.1)
-print("Fill next")
-pixels.fill((0,255,0))
-pixels.show()
-time.sleep(0.1)
-print("And next..")
-pixels.fill((0,0,255))
-pixels.show()
-time.sleep(0.1)
-pixels.fill((0,0,0))
+
+def handler(signum, frame):
+    pixels.fill((0, 0, 0))
+    pixels.show()
+    exit(1)
+
+# Turn all the LEDs off on CTRL-C and terminate
+signal.signal(signal.SIGINT, handler)
+
+
+# Check the LEDs light up
+pixels.fill((0, 0, 0))
 pixels.show()
 time.sleep(0.1)
 for i in range(num_pixels):
-    pixels[i] = (255,0,0)
+    pixels[i] = (255, 0, 0)
     pixels.show()
-    time.sleep(0.05)
-pixels.fill((0,0,0))
+    time.sleep(0.01)
+for i in range(num_pixels):
+    pixels[i] = (0, 255, 0)
+    pixels.show()
+    time.sleep(0.01)
+for i in range(num_pixels):
+    pixels[i] = (0, 0, 255)
+    pixels.show()
+    time.sleep(0.01)
+pixels.fill((0, 0, 0))
 pixels.show()
+
 
 # This is the index of the microphone
 input_device_index = 2
 
 # Set up audio sampler
 # Number of samples needs to be a power of 2.
-NUM_SAMPLES = 2**10
+NUM_SAMPLES = 2 ** 10
 # Not sure what determines this or what other values are possible.
 SAMPLING_RATE = 44100
+time_step = 1.0 / SAMPLING_RATE
+max_freq = SAMPLING_RATE // 2
+total_bins = NUM_SAMPLES // 2
+
+def get_bin_for_freq(freq: float):
+    return int(total_bins * freq / max_freq)
+
+cutoff_bin = get_bin_for_freq(8000)
+# if you take an FFT of a chunk of audio, the edges will look like
+# super high frequency cutoffs. Applying a window tapers the edges
+# of each end of the chunk down to zero.
+hamming_window = hamming(NUM_SAMPLES).astype(float32)
+
 pa = pyaudio.PyAudio()
 stream = pa.open(format=pyaudio.paInt16,
                  channels=1,
@@ -62,14 +87,15 @@ stream = pa.open(format=pyaudio.paInt16,
 print("Spectrum Analyzer working. Press CTRL-C to quit.")
 
 # Creates and array of NUM_SAMPLES/2 spread equally over the range
-# from 0 to half the sampling rate. Essentially these are the frequency bins
+# from 0 to half the sampling rate. Essentially these are the frequency total_bins
 # The frequency for any intensity value can be found by getting the
 # index of that intensity bin and looking up the value in the corresponding
 # bin in the frequencies array.
 # This has only positive frequencies because of how the intensity is calculated
 frequencies = linspace(0.0, float(SAMPLING_RATE) / 2, num=NUM_SAMPLES // 2)
+
 # fftfreq includes positive and negative frequencies
-#frequencies = fftfreq(NUM_SAMPLES*2, 1.0/SAMPLING_RATE)
+# frequencies = fftfreq(NUM_SAMPLES*2, 1.0/SAMPLING_RATE)
 
 def get_fft(data: ndarray):
     """
@@ -79,28 +105,18 @@ def get_fft(data: ndarray):
     by equal time intervals
     :returns A tuple: an array of the frequencies and the corresponding array of intensities.
     """
-    # Each data point is a signed 16 bit number, so we can normalize by dividing 32*1024
-    normalized_data = audio_data / 32768.0
-    intensity = abs(fft(normalized_data))[:NUM_SAMPLES // 2]
-    return frequencies, intensity
+    data = data * hamming_window
+    FFT = fft(data)
+    FFT = abs(FFT)
+    # Only the 1st half are real
+    freq = fftfreq(len(FFT), 1.0/SAMPLING_RATE)
+    return freq[:len(freq)//2], FFT[:len(FFT)//2]
 
 
 reporting_bands_interval = 100
 reporting_fps_interval = 100
 counter = 0
 # Note: For Python3 use // when dividing int by int to get an int
-
-# Split the bands into 3. This defines the slices for each band
-# bass 20 to 300 Hz, mid-range 300 Hz to 4 kHz, treble 4 kHz to the end.
-# There are NUM_SAMPLES equal width bins, covering frequency range from 0 - SAMPLING_RATE/2
-max_freq = SAMPLING_RATE // 2
-bin_freq_width = (NUM_SAMPLES // 2)/ max_freq
-bass = slice(1, int(299 * bin_freq_width))
-mid_range = slice(int(350 * bin_freq_width), int(3000 * bin_freq_width))
-treble = slice(int(4000 * bin_freq_width), NUM_SAMPLES // 2)
-audio_bands = [bass, mid_range, treble]
-
-print("BANDS", audio_bands)
 
 start_time = time.time()
 while True:
@@ -118,24 +134,39 @@ while True:
     # sections of the LED strand. There are several factors here, ultimately the LEDs
     # need to look pleasing to the eye and must be clearly in sync with the music. Complicated
     # by the fact that the frequency bands are not the same width.
-    #intensity_slices = [average(intensity[s]) for s in audio_bands]
+    # intensity_slices = [average(intensity[s]) for s in audio_bands]
     # Another approach, pick the maximum
     # intensity_slices = [amax(intensity[s]) for s in audio_bands]
     # Another approach, pick the same number of bands as there are LEDs
-    N = (NUM_SAMPLES // 2) // num_pixels
-    intensity_slices = [average(intensity[n:n+N]) for n in range(1, len(intensity), N)]
+    N = cutoff_bin // num_pixels
+    average_intensity = average(intensity)
+    intensity_slices = [average(intensity[n:n + N]) for n in range(10, cutoff_bin, N)]
     intensity_slices = intensity_slices[0:num_pixels]
-    max_intensity = amax(intensity_slices)
-    intensity_slices = ((intensity_slices / max_intensity) * 255).astype(np.int)
+    act_max_intensity = amax(intensity_slices)
+    max_intensity = float64(15000.0)
+    intensity_slices = ((intensity_slices / (act_max_intensity * 2)) * 255).astype(np.int)
+    intensity_slices = clip(intensity_slices, 0, 255)
     # Threshold
-    threshold = 40
+    threshold = int( 255 * average_intensity * 10 / (act_max_intensity * 2))
     intensity_slices[intensity_slices < threshold] = 0
+    band0_stop = len(intensity_slices) // 3
+    band1_stop = band0_stop * 2
+    band2_stop = len(intensity_slices)
     for i, value in np.ndenumerate(intensity_slices):
-        pixels[i[0]] = (value, value, value)
+        index = i[0]
+        if band0_stop > index:
+            pixels[index] = (value, 0, 0)
+        elif band1_stop > index:
+            pixels[index] = (0, value, 0)
+        elif band2_stop > index:
+            pixels[index] = (0, 0, value)
+        else:
+            pixels[index] = (value, value, value)
     pixels.show()
+
     # Report intensity
     if counter % reporting_bands_interval == 0:
-        print(len(intensity_slices), len(freqs), intensity_slices)
+        print(len(intensity_slices), len(freqs), type(max_intensity), max_intensity, act_max_intensity, average_intensity, intensity_slices)
 
     # Report the frames per second
     if counter % reporting_fps_interval == 0:
