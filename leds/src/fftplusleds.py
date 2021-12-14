@@ -5,7 +5,7 @@ import adafruit_ws2801
 import board
 import numpy as np
 import pyaudio
-from numpy import linspace, frombuffer, ndarray, amax, multiply, clip, float32, delete, log10, hamming, float64
+from numpy import linspace, frombuffer, ndarray, amax, multiply, clip, float32, delete, log10, hamming, float64, amin
 from numpy.fft import fft, fftfreq
 from scipy import average, log
 
@@ -113,8 +113,8 @@ def get_fft(data: ndarray):
     return freq[:len(freq)//2], FFT[:len(FFT)//2]
 
 
-reporting_bands_interval = 100
-reporting_fps_interval = 100
+reporting_bands_interval = 10000
+reporting_fps_interval = 10000
 counter = 0
 # Note: For Python3 use // when dividing int by int to get an int
 
@@ -139,15 +139,22 @@ while True:
     # intensity_slices = [amax(intensity[s]) for s in audio_bands]
     # Another approach, pick the same number of bands as there are LEDs
     N = cutoff_bin // num_pixels
-    average_intensity = average(intensity)
+    sig_threshold = float64(70000.0)
+    upper_threshold = float64(150000.0)
+    intensity[intensity < sig_threshold] = 0
     intensity_slices = [average(intensity[n:n + N]) for n in range(10, cutoff_bin, N)]
     intensity_slices = intensity_slices[0:num_pixels]
-    act_max_intensity = amax(intensity_slices)
-    max_intensity = float64(15000.0)
-    intensity_slices = ((intensity_slices / (act_max_intensity * 2)) * 255).astype(np.int)
+    sig_average = average(intensity_slices)
+    max = amax(intensity_slices)
+    min = amin(intensity_slices)
+    print(f"{min:10.1f} {sig_average: 10.1f} {max: 10.1f}", "\r", flush=True, end='')
+    intensity_slices = ((intensity_slices / max) * 255).astype(np.int)
+    # Need to limit the values to between 0 and 255
     intensity_slices = clip(intensity_slices, 0, 255)
     # Threshold
-    threshold = int( 255 * average_intensity * 10 / (act_max_intensity * 2))
+    average_intensity = average(intensity_slices)
+    pixel_max = amax(intensity_slices)
+    threshold = int(average_intensity * 2.6)
     intensity_slices[intensity_slices < threshold] = 0
     band0_stop = len(intensity_slices) // 3
     band1_stop = band0_stop * 2
@@ -166,7 +173,9 @@ while True:
 
     # Report intensity
     if counter % reporting_bands_interval == 0:
-        print(len(intensity_slices), len(freqs), type(max_intensity), max_intensity, act_max_intensity, average_intensity, intensity_slices)
+        print(len(intensity_slices), len(freqs), "Max (", max, ")", "Min (", min, ")", "Average (", average_intensity, ")",
+              "Threshold (", threshold, ")",
+                  intensity_slices)
 
     # Report the frames per second
     if counter % reporting_fps_interval == 0:
