@@ -5,13 +5,15 @@ import adafruit_ws2801
 import board
 import numpy as np
 import pyaudio
-from numpy import linspace, frombuffer, ndarray, amax, clip, float32, hamming, float64, amin
+from numpy import linspace, frombuffer, ndarray, amax, clip, float32, hamming, log10
 from numpy.fft import fft, fftfreq
 from scipy import average
 
 # FFT On the microphone input plus LEDS
 # Based on this https://bitbucket.org/togiles/lightshowpi/src/master/py/fft.py
 # and this: https://jared.geek.nz/2013/jan/sound-reactive-led-lights
+#
+# This will peak detection on the FFT
 
 debug = True
 
@@ -43,14 +45,6 @@ for i in range(num_pixels):
     pixels[i] = (255, 0, 0)
     pixels.show()
     time.sleep(0.01)
-for i in range(num_pixels):
-    pixels[i] = (0, 255, 0)
-    pixels.show()
-    time.sleep(0.01)
-for i in range(num_pixels):
-    pixels[i] = (0, 0, 255)
-    pixels.show()
-    time.sleep(0.01)
 pixels.fill((0, 0, 0))
 pixels.show()
 
@@ -72,6 +66,16 @@ def get_bin_for_freq(freq: float):
 
 
 cutoff_bin = get_bin_for_freq(8000)
+# Split the bands into 3. This defines the slices for each band
+# bass 20 to 300 Hz, mid-range 300 Hz to 4 kHz, treble 4 kHz to the end.
+# There are NUM_SAMPLES equal width bins, covering frequency range from 0 - SAMPLING_RATE/2
+max_freq = SAMPLING_RATE // 2
+bin_freq_width = (NUM_SAMPLES // 2) / max_freq
+bass = slice(1, int(299 * bin_freq_width))
+mid_range = slice(int(350 * bin_freq_width), int(3000 * bin_freq_width))
+treble = slice(int(4000 * bin_freq_width), NUM_SAMPLES // 2)
+audio_bands = [bass, mid_range, treble]
+
 # if you take an FFT of a chunk of audio, the edges will look like
 # super high frequency cutoffs. Applying a window tapers the edges
 # of each end of the chunk down to zero.
@@ -117,18 +121,22 @@ def get_fft(data: ndarray):
 
 
 reporting_bands_interval = 10000
-reporting_fps_interval = 10000
+reporting_fps_interval = 400
 counter = 0
 # Note: For Python3 use // when dividing int by int to get an int
 
+a_third = num_pixels // 3
+band0_stop = a_third
+band1_stop = band0_stop * 2
+band2_stop = num_pixels
+
 start_time = time.time()
 while True:
-    counter += 1
     # Need to set exception on overflow false, because this cannot keep up
     # with the data rate
     data = stream.read(NUM_SAMPLES, exception_on_overflow=False)
     audio_data = frombuffer(data, 'int16')
-    freqs, intensity = get_fft(audio_data)
+    freqs, intensity_raw = get_fft(audio_data)
     # average the intensity over frequency (audio frequency) bands chosen for aesthetic qualities,
     # these bands will be mapped to color ranges, e.g. RED, GREEN and BLUE.
     # In other words: Bass, mid-range and treble are mapped to Red/Green/Blue
@@ -137,49 +145,30 @@ while True:
     # sections of the LED strand. There are several factors here, ultimately the LEDs
     # need to look pleasing to the eye and must be clearly in sync with the music. Complicated
     # by the fact that the frequency bands are not the same width.
-    # intensity_slices = [average(intensity[s]) for s in audio_bands]
-    # Another approach, pick the maximum
-    # intensity_slices = [amax(intensity[s]) for s in audio_bands]
-    # Another approach, pick the same number of bands as there are LEDs
+    # Use the log10 of the intensity
+    intensity = log10(intensity_raw)
+    sig_average = average(intensity)
+    max = amax(intensity)
+    threshold = sig_average * 1.5
+    intensity[intensity < threshold] = 0
+    # Map number of bins to the array pixels and values to the range 0 to 255
     N = cutoff_bin // num_pixels
-    sig_threshold = float64(70000.0)
-    upper_threshold = float64(150000.0)
-    intensity[intensity < sig_threshold] = 0
     intensity_slices = [average(intensity[n:n + N]) for n in range(10, cutoff_bin, N)]
     intensity_slices = intensity_slices[0:num_pixels]
-    sig_average = average(intensity_slices)
-    max = amax(intensity_slices)
-    min = amin(intensity_slices)
-    print(f"{min:10.1f} {sig_average: 10.1f} {max: 10.1f}", "\r", flush=True, end='')
     intensity_slices = ((intensity_slices / max) * 255).astype(np.int)
     # Need to limit the values to between 0 and 255
     intensity_slices = clip(intensity_slices, 0, 255)
-    # Threshold
-    average_intensity = average(intensity_slices)
-    pixel_max = amax(intensity_slices)
-    threshold = int(average_intensity * 2.6)
-    intensity_slices[intensity_slices < threshold] = 0
-    band0_stop = len(intensity_slices) // 3
-    band1_stop = band0_stop * 2
-    band2_stop = len(intensity_slices)
-    for i, value in np.ndenumerate(intensity_slices):
-        index = i[0]
-        if band0_stop > index:
-            pixels[index] = (value, 0, 0)
-        elif band1_stop > index:
-            pixels[index] = (0, value, 0)
-        elif band2_stop > index:
-            pixels[index] = (0, 0, value)
+    pixels.fill((0, 0, 0))
+    for i in range(num_pixels):
+        if i < band0_stop:
+            color = (255, 0, 0)
+        elif i < band1_stop:
+            color = (0, 255, 0)
         else:
-            pixels[index] = (value, value, value)
+            color = (0, 0, 255)
+        if intensity_slices[i] > 0:
+            pixels[i] = color
     pixels.show()
-
-    # Report intensity
-    if counter % reporting_bands_interval == 0:
-        print(len(intensity_slices), len(freqs), "Max (", max, ")", "Min (", min, ")", "Average (", average_intensity,
-              ")",
-              "Threshold (", threshold, ")",
-              intensity_slices)
 
     # Report the frames per second
     if counter % reporting_fps_interval == 0:
@@ -188,3 +177,5 @@ while True:
         start_time = lap
         loops_per_second = reporting_fps_interval / elapsed
         print("Elapsed time", elapsed, "Frames per second", loops_per_second)
+        print("average", sig_average, "Intensity", intensity)
+    counter += 1
