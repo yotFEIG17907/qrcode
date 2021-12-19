@@ -5,7 +5,7 @@ import adafruit_ws2801
 import board
 import numpy as np
 import pyaudio
-from numpy import linspace, frombuffer, ndarray, amax, clip, float32, hamming, log10
+from numpy import linspace, frombuffer, ndarray, amax, clip, float32, float64, hamming, log10, array
 from numpy.fft import fft, fftfreq
 from scipy import average
 
@@ -57,24 +57,30 @@ NUM_SAMPLES = 2 ** 10
 # Not sure what determines this or what other values are possible.
 SAMPLING_RATE = 44100
 time_step = 1.0 / SAMPLING_RATE
-max_freq = SAMPLING_RATE // 2
+max_freq_hz = SAMPLING_RATE // 2
 total_bins = NUM_SAMPLES // 2
-
-
-def get_bin_for_freq(freq: float):
-    return int(total_bins * freq / max_freq)
-
-
-cutoff_bin = get_bin_for_freq(8000)
 # Split the bands into 3. This defines the slices for each band
 # bass 20 to 300 Hz, mid-range 300 Hz to 4 kHz, treble 4 kHz to the end.
 # There are NUM_SAMPLES equal width bins, covering frequency range from 0 - SAMPLING_RATE/2
-max_freq = SAMPLING_RATE // 2
-bin_freq_width = (NUM_SAMPLES // 2) / max_freq
-bass = slice(1, int(299 * bin_freq_width))
-mid_range = slice(int(350 * bin_freq_width), int(3000 * bin_freq_width))
-treble = slice(int(4000 * bin_freq_width), NUM_SAMPLES // 2)
+bass_lower_freq_hz = 0
+base_upper_freq_hz = 299
+mid_range_lower_freq_hz = 350
+mid_range_upper_freq_hz = 3000
+treble_lower_freq_hz = 4000
+treble_upper_freq_hz = max_freq_hz
+cutoff_freq_hz = 8000
+bins_per_hz = total_bins / max_freq_hz
+# Convert the frequency in Hertz to bins in the FFT.
+bass = slice(int(bass_lower_freq_hz * bins_per_hz), int(base_upper_freq_hz * bins_per_hz))
+mid_range = slice(int(mid_range_lower_freq_hz * bins_per_hz), int(mid_range_upper_freq_hz * bins_per_hz))
+treble = slice(int(treble_lower_freq_hz * bins_per_hz), total_bins)
 audio_bands = [bass, mid_range, treble]
+print("BANDS", audio_bands)
+
+def get_bin_for_freq(freq: float):
+    return int(bins_per_hz * freq)
+
+cutoff_bin = get_bin_for_freq(cutoff_freq_hz)
 
 # if you take an FFT of a chunk of audio, the edges will look like
 # super high frequency cutoffs. Applying a window tapers the edges
@@ -147,9 +153,10 @@ while True:
     # by the fact that the frequency bands are not the same width.
     # Use the log10 of the intensity
     intensity = log10(intensity_raw)
-    sig_average = average(intensity)
-    max = amax(intensity)
-    threshold = sig_average * 1.5
+    # Compute the average in each of the bands separately
+    sig_average = array([average(intensity[s]) for s in audio_bands])
+    max = array([max(intensity[s]) for s in audio_bands])
+    threshold = sig_average * float64(1.5)
     intensity[intensity < threshold] = 0
     # Map number of bins to the array pixels and values to the range 0 to 255
     N = cutoff_bin // num_pixels
