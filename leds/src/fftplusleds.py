@@ -150,7 +150,6 @@ while True:
     sig_average = average(intensity_slices)
     max = amax(intensity_slices)
     min = amin(intensity_slices)
-    print(f"{min:10.1f} {sig_average: 10.1f} {max: 10.1f}", "\r", flush=True, end='')
     intensity_slices = ((intensity_slices / max) * 255).astype(np.int)
     # Need to limit the values to between 0 and 255
     intensity_slices = clip(intensity_slices, 0, 255)

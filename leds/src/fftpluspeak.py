@@ -5,9 +5,9 @@ import adafruit_ws2801
 import board
 import numpy as np
 import pyaudio
-from numpy import linspace, frombuffer, ndarray, amax, clip, float32, float64, hamming, log10, array
+from numpy import linspace, frombuffer, ndarray, clip, float32, float64, hamming, log10, array
 from numpy.fft import fft, fftfreq
-from scipy import average
+from scipy import average, amax
 
 # FFT On the microphone input plus LEDS
 # Based on this https://bitbucket.org/togiles/lightshowpi/src/master/py/fft.py
@@ -63,9 +63,9 @@ total_bins = NUM_SAMPLES // 2
 # bass 20 to 300 Hz, mid-range 300 Hz to 4 kHz, treble 4 kHz to the end.
 # There are NUM_SAMPLES equal width bins, covering frequency range from 0 - SAMPLING_RATE/2
 bass_lower_freq_hz = 0
-base_upper_freq_hz = 299
-mid_range_lower_freq_hz = 350
-mid_range_upper_freq_hz = 3000
+base_upper_freq_hz = 999
+mid_range_lower_freq_hz = 1000
+mid_range_upper_freq_hz = 3999
 treble_lower_freq_hz = 4000
 treble_upper_freq_hz = max_freq_hz
 cutoff_freq_hz = 8000
@@ -74,11 +74,16 @@ bins_per_hz = total_bins / max_freq_hz
 bass = slice(int(bass_lower_freq_hz * bins_per_hz), int(base_upper_freq_hz * bins_per_hz))
 mid_range = slice(int(mid_range_lower_freq_hz * bins_per_hz), int(mid_range_upper_freq_hz * bins_per_hz))
 treble = slice(int(treble_lower_freq_hz * bins_per_hz), total_bins)
+# Audio bands is a list of slices of the FFT array.
 audio_bands = [bass, mid_range, treble]
-print("BANDS", audio_bands)
+
+band0_stop = int (bass.stop * num_pixels / total_bins)
+band1_stop = int (mid_range.stop * num_pixels / total_bins)
+band2_stop = int (treble.stop * num_pixels / total_bins)
 
 def get_bin_for_freq(freq: float):
     return int(bins_per_hz * freq)
+
 
 cutoff_bin = get_bin_for_freq(cutoff_freq_hz)
 
@@ -131,10 +136,7 @@ reporting_fps_interval = 400
 counter = 0
 # Note: For Python3 use // when dividing int by int to get an int
 
-a_third = num_pixels // 3
-band0_stop = a_third
-band1_stop = band0_stop * 2
-band2_stop = num_pixels
+print("BANDS", audio_bands)
 
 start_time = time.time()
 while True:
@@ -155,25 +157,30 @@ while True:
     intensity = log10(intensity_raw)
     # Compute the average in each of the bands separately
     sig_average = array([average(intensity[s]) for s in audio_bands])
-    max = array([max(intensity[s]) for s in audio_bands])
-    threshold = sig_average * float64(1.5)
-    intensity[intensity < threshold] = 0
-    # Map number of bins to the array pixels and values to the range 0 to 255
+    band_max = array([amax(intensity[s]) for s in audio_bands])
+    band_thresholds = sig_average * float64(1.3)
+    # Apply each band's threshold to its slice of the array
+    for band_threshold, band_slice in zip(band_thresholds, audio_bands):
+        intensity[band_slice] = np.where(intensity[band_slice] < band_threshold, 0, intensity[band_slice])
+    # Map the intensity to the range 0-255
+    for max, band_slice in zip(band_max, audio_bands):
+        intensity_slices = ((intensity[band_slice] / max) * 255).astype(np.int)
+    # Map the FFT bands onto the pixels.
     N = cutoff_bin // num_pixels
-    intensity_slices = [average(intensity[n:n + N]) for n in range(10, cutoff_bin, N)]
+    intensity_slices = [int(average(intensity_slices[n:n + N])) for n in range(10, cutoff_bin, N)]
     intensity_slices = intensity_slices[0:num_pixels]
-    intensity_slices = ((intensity_slices / max) * 255).astype(np.int)
     # Need to limit the values to between 0 and 255
     intensity_slices = clip(intensity_slices, 0, 255)
     pixels.fill((0, 0, 0))
     for i in range(num_pixels):
-        if i < band0_stop:
-            color = (255, 0, 0)
-        elif i < band1_stop:
-            color = (0, 255, 0)
-        else:
-            color = (0, 0, 255)
-        if intensity_slices[i] > 0:
+        pixel_brightness = intensity_slices[i]
+        if pixel_brightness > 0:
+            if i < band0_stop:
+                color = (pixel_brightness, 0, 0)
+            elif i < band1_stop:
+                color = (0, pixel_brightness, 0)
+            else:
+                color = (0, 0, pixel_brightness)
             pixels[i] = color
     pixels.show()
 
@@ -184,5 +191,5 @@ while True:
         start_time = lap
         loops_per_second = reporting_fps_interval / elapsed
         print("Elapsed time", elapsed, "Frames per second", loops_per_second)
-        print("average", sig_average, "Intensity", intensity)
+        print("average", sig_average, "Intensity", intensity_slices)
     counter += 1
