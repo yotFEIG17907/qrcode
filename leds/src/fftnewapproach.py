@@ -1,5 +1,6 @@
 import signal
 import time
+from typing import Tuple, List
 
 import adafruit_ws2801
 import board
@@ -10,6 +11,8 @@ from numpy.fft import fft
 # FFT On the microphone input plus LEDS
 # Handling of the peaks based on this: https://github.com/yotFEIG17907/addressable-leds/wiki
 from scipy.linalg._solve_toeplitz import float64
+
+from leds.src.led_utls.nm_to_rgb import wavelength_to_rgb_factor
 
 debug = True
 
@@ -22,10 +25,13 @@ def initialize_leds(n: int, brightness: float):
     return pixels
 
 
-def initialize_shutdown_handler(pixels):
+def initialize_shutdown_handler(pixels, pa, stream):
     def handler(signum, frame):
         pixels.fill((0, 0, 0))
         pixels.show()
+        stream.stop_stream()
+        stream.close()
+        pa.terminate()
         exit(1)
 
     # Turn all the LEDs off on CTRL-C and terminate
@@ -55,7 +61,7 @@ def initialize_audio(sampling_rate: int, input_device_index: int, samples_per_bu
                      input=True,
                      output=False,
                      frames_per_buffer=samples_per_buffer)
-    return stream
+    return pa, stream
 
 
 def get_fft(data: ndarray, window):
@@ -68,14 +74,38 @@ def get_fft(data: ndarray, window):
     """
     data = data * window
     FFT = fft(data)
-    # Amplitude
-    power = np.log10(np.abs(FFT)) ** 2
-    #amp = np.abs(FFT)
+    # Amplitude/Power
+    # Cannot take log because some values are zero
+    amp = np.abs(FFT)
     # Only 1st half is real
-    return power[:len(power) // 2]
+    return amp[:len(amp) // 2]
 
 
-def do_fft_loop(stream, pixels, cutoff_freq_hz: float, window, sample_rate: int, n_samples: int):
+def get_color_map(n_bins: int) -> List[Tuple[float, float, float]]:
+    """
+    Generates an array of colors to cover the visible spectrum with the given number of bins
+    :param n_bins: The number of distinct colors
+    :return: A list of color tuples, RGB factors (from 0 to 1)
+    """
+    step = (380 - 750) / n_bins
+    colors = []
+    for wavelength in np.arange(750, 380, step):
+        colors.append(wavelength_to_rgb_factor(wavelength=wavelength, gamma=1.0))
+    assert len(colors) == n_bins, f"Colors length is {len(colors)} but n_bins is {n_bins}"
+    return colors
+
+
+def do_fft_loop(stream, pixels, cutoff_freq_hz: float, window, sample_rate: int, n_samples: int) -> None:
+    """
+
+    :param stream: The source of audio samples
+    :param pixels: The pixels to be controlled
+    :param cutoff_freq_hz: The highest frequency to use
+    :param window: The Window to apply to data to "feather" the edges
+    :param sample_rate: The rate at which the audio is sampled
+    :param n_samples: How samples or bins, this determined how many frequency bins are in the FFT
+    :return: Nothing
+    """
     reporting_fps_interval = 400
     # Note: For Python3 use // when dividing int by int to get an int
     max_led_value = int(255)
@@ -86,52 +116,38 @@ def do_fft_loop(stream, pixels, cutoff_freq_hz: float, window, sample_rate: int,
     hz_per_bin = (sample_rate / 2) / (n_samples / 2)
     max_freq = cutoff_freq_hz
     cutoff_bin = int(max_freq / hz_per_bin)
-    # Then want cutoff bin to a multiple of the number of pixels
-    N = cutoff_bin // num_pixels
+    # Then want cutoff bin to a multiple of the number of pixels but it must be a minimum of 1
+    N = max(1, cutoff_bin // num_pixels)
     cutoff_bin = N * num_pixels
+    color_factors = get_color_map(num_pixels)
     while True:
         # Need to set exception on overflow false, because this cannot keep up
         # with the data rate
         data = stream.read(n_samples, exception_on_overflow=False)
         audio_data = frombuffer(data, 'int16')
-        levels = get_fft(audio_data, window=window)
+        levels = get_fft(data = audio_data, window=window)
         # Truncate to the cutoff frequency
-        levels = levels[:-(len(levels)-cutoff_bin)]
+        levels = levels[:-(len(levels) - cutoff_bin)]
         # Map the levels an intensity and threshold
-        max = amax(levels)
+        max_level = amax(levels)
+        if max_level == 0.0:
+            print("Max level is zero")
+            continue
         threshold = average(levels) * 1.8
-        levels[levels < threshold ] = 0.0
+        levels[levels < threshold] = 0.0
+        # Split the array into groups of N in size and compute the mean of each group.
         level_slices = levels.reshape(-1, N).mean(axis=1)
-        matrix = np.int_(level_slices * float64(max_led_value / max))
-        # Need to limit the values to between 0 and the band_width_in_pixels
+        # Normalized these onto the range 0 to 255.0
+        matrix = np.int_(level_slices * float64(max_led_value / max_level))
+        # Need to limit the values to between 0 and the max LED value
         matrix = clip(matrix, 0, max_led_value)
+        # Limit it to only num pixels
         matrix = matrix[0:num_pixels]
 
         pixels.fill((0, 0, 0))
         for i in range(num_pixels):
             level = matrix[i]
-            if level == 0:
-                continue
-            if i < 10:
-                color = (level, 0, 0)
-            elif i < 20:
-                color = (0, level, 0)
-            elif i < 30:
-                color = (0, 0, level)
-            elif i < 40:
-                color = (level, level, 0)
-            elif i < 50:
-                color = (level, 0, level)
-            elif i < 60:
-                color = (128, level, 128)
-            elif i < 70:
-                color = (64, level, 64)
-            elif i < 80:
-                color = (32, 32, level)
-            elif i < 90:
-                color = (64, 64, level)
-            else:
-                color = (level, level, level)
+            color = ([int(rgb_factor * level) for rgb_factor in color_factors[i]])
             pixels[i] = color
         pixels.show()
 
@@ -155,17 +171,17 @@ def main():
 
     # Set up audio sampler
     # Number of bins in the FFT needs to be a power of 2
-    NUM_SAMPLES = 2 ** 10
+    NUM_SAMPLES = 512
     # Not sure what determines this or what other values are possible.
     SAMPLING_RATE = 44100
 
-    cutoff_freq_hz = 14000
+    cutoff_freq_hz = 10000
     pixels = initialize_leds(n=num_pixels, brightness=1.0)
-    initialize_shutdown_handler(pixels)
     print("LEDs initialized")
-    stream = initialize_audio(sampling_rate=SAMPLING_RATE, input_device_index=input_device_index,
+    pa, stream = initialize_audio(sampling_rate=SAMPLING_RATE, input_device_index=input_device_index,
                               samples_per_buffer=NUM_SAMPLES)
     print("Audio input initialized")
+    initialize_shutdown_handler(pixels, pa, stream)
     show_all_leds(pixels)
     print("Spectrum Analyzer starting. Press CTRL-C to quit.")
 
