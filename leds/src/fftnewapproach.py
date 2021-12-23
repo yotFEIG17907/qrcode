@@ -13,43 +13,10 @@ from numpy.fft import fft
 from scipy.linalg._solve_toeplitz import float64
 
 from leds.src.led_utls.nm_to_rgb import wavelength_to_rgb_factor
+from leds.src.led_utls.pi_leds import initialize_leds, initialize_shutdown_handler, show_all_leds
 
 debug = True
 
-
-def initialize_leds(n: int, brightness: float):
-    # Set up for the LEDs
-    SDI = board.MOSI
-    CLK = board.SCLK
-    pixels = adafruit_ws2801.WS2801(clock=CLK, data=SDI, n=n, brightness=brightness, auto_write=False)
-    return pixels
-
-
-def initialize_shutdown_handler(pixels, pa, stream):
-    def handler(signum, frame):
-        pixels.fill((0, 0, 0))
-        pixels.show()
-        stream.stop_stream()
-        stream.close()
-        pa.terminate()
-        exit(1)
-
-    # Turn all the LEDs off on CTRL-C and terminate
-    signal.signal(signal.SIGINT, handler)
-
-
-def show_all_leds(pixels):
-    # Check the LEDs light up
-    pixels.fill((0, 0, 0))
-    pixels.show()
-    time.sleep(0.1)
-    n_pixels = len(pixels)
-    for i in range(n_pixels):
-        pixels[i] = (255, 0, 0)
-        pixels.show()
-        time.sleep(0.01)
-    pixels.fill((0, 0, 0))
-    pixels.show()
 
 
 def initialize_audio(sampling_rate: int, input_device_index: int, samples_per_buffer: int):
