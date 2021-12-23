@@ -1,6 +1,7 @@
 # Simple demo of of the WS2801/SPI-like addressable RGB LED lights.
 
 # This uses the most recent Adafruit library as of 2021
+import signal
 
 import adafruit_ws2801
 import board
@@ -14,6 +15,15 @@ bright = 1.0
 num_pixels = 100
 
 pixels = adafruit_ws2801.WS2801(clock=CLK, data=SDI, n=num_pixels, brightness=bright, auto_write=False)
+
+def initialize_shutdown_handler(pixels):
+    def handler(signum, frame):
+        pixels.fill((0, 0, 0))
+        pixels.show()
+        exit(1)
+
+    # Turn all the LEDs off on CTRL-C and terminate
+    signal.signal(signal.SIGINT, handler)
 
 
 def zipper(pixels, num_pixesl, wait):
@@ -39,6 +49,7 @@ def zipper(pixels, num_pixesl, wait):
             pixels.show()
             time.sleep(wait)
 
+initialize_shutdown_handler(pixels)
 
 while True:
     # Comment this line out if you have RGBW/GRBW NeoPixels
