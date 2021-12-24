@@ -7,6 +7,8 @@ import adafruit_ws2801
 import board
 import time
 
+from led_utls.pi_leds import initialize_shutdown_handler
+
 SDI = board.MOSI
 CLK = board.SCLK
 bright = 1.0
@@ -15,16 +17,6 @@ bright = 1.0
 num_pixels = 100
 
 pixels = adafruit_ws2801.WS2801(clock=CLK, data=SDI, n=num_pixels, brightness=bright, auto_write=False)
-
-def initialize_shutdown_handler(pixels):
-    def handler(signum, frame):
-        pixels.fill((0, 0, 0))
-        pixels.show()
-        exit(1)
-
-    # Turn all the LEDs off on CTRL-C and terminate
-    signal.signal(signal.SIGINT, handler)
-
 
 def zipper(pixels, num_pixesl, wait):
     r = 50
