@@ -43,9 +43,9 @@ def get_fft(data: ndarray, window):
     FFT = fft(data)
     # Amplitude/Power
     # Cannot take log because some values are zero
-    amp = np.abs(FFT)
+    levels = np.log10(np.abs(FFT)) ** 2
     # Only 1st half is real
-    return amp[:len(amp) // 2]
+    return levels[:len(levels) // 2]
 
 
 def get_color_map(n_bins: int) -> List[Tuple[float, float, float]]:
@@ -62,11 +62,12 @@ def get_color_map(n_bins: int) -> List[Tuple[float, float, float]]:
     return colors
 
 
-def do_fft_loop(stream, pixels, cutoff_freq_hz: float, window, sample_rate: int, n_samples: int) -> None:
+def do_fft_loop(stream, pixels, start_freq_hz: float, cutoff_freq_hz: float, window, sample_rate: int, n_samples: int) -> None:
     """
 
     :param stream: The source of audio samples
     :param pixels: The pixels to be controlled
+    :param start_freq_hz: The frequency bin to map to the 1st LED, in Hz
     :param cutoff_freq_hz: The highest frequency to use
     :param window: The Window to apply to data to "feather" the edges
     :param sample_rate: The rate at which the audio is sampled
@@ -83,9 +84,11 @@ def do_fft_loop(stream, pixels, cutoff_freq_hz: float, window, sample_rate: int,
     hz_per_bin = (sample_rate / 2) / (n_samples / 2)
     max_freq = cutoff_freq_hz
     cutoff_bin = int(max_freq / hz_per_bin)
-    # Then want cutoff bin to a multiple of the number of pixels but it must be a minimum of 1
-    N = max(1, cutoff_bin // num_pixels)
-    cutoff_bin = N * num_pixels
+    start_bin = int(start_freq_hz / hz_per_bin)
+    # Want the number of FFT bins to map to the number pixels so find N
+    # such that the number of bins between start and cutoff is a multiple of N
+    N = max(1, (cutoff_bin - start_bin) // num_pixels)
+    cutoff_bin = start_bin + N * num_pixels
     color_factors = get_color_map(num_pixels)
     while True:
         # Need to set exception on overflow false, because this cannot keep up
@@ -94,13 +97,13 @@ def do_fft_loop(stream, pixels, cutoff_freq_hz: float, window, sample_rate: int,
         audio_data = frombuffer(data, 'int16')
         levels = get_fft(data = audio_data, window=window)
         # Truncate to the cutoff frequency
-        levels = levels[:-(len(levels) - cutoff_bin)]
+        levels = levels[start_bin:cutoff_bin]
         # Map the levels an intensity and threshold
         max_level = amax(levels)
         if max_level == 0.0:
             print("Max level is zero")
             continue
-        threshold = average(levels) * 1.8
+        threshold = average(levels) * 1.5
         levels[levels < threshold] = 0.0
         # Split the array into groups of N in size and compute the mean of each group.
         level_slices = levels.reshape(-1, N).mean(axis=1)
@@ -138,11 +141,12 @@ def main():
 
     # Set up audio sampler
     # Number of bins in the FFT needs to be a power of 2
-    NUM_SAMPLES = 512
+    NUM_SAMPLES = 2 ** 10
     # Not sure what determines this or what other values are possible.
     SAMPLING_RATE = 44100
 
-    cutoff_freq_hz = 10000
+    start_freq_hz = 300
+    cutoff_freq_hz = 8000
     pixels = initialize_leds(n=num_pixels, brightness=1.0)
     print("LEDs initialized")
     pa, stream = initialize_audio(sampling_rate=SAMPLING_RATE, input_device_index=input_device_index,
@@ -160,6 +164,7 @@ def main():
     do_fft_loop(stream,
                 pixels,
                 window=hamming_window,
+                start_freq_hz=start_freq_hz,
                 cutoff_freq_hz=cutoff_freq_hz,
                 sample_rate=SAMPLING_RATE,
                 n_samples=NUM_SAMPLES)

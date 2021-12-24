@@ -14,13 +14,19 @@ BUTTON_PIN: int = 23
 DEBOUNCE_TIME_MS = 200
 
 led_counter = 0
-stop = False
+caught = False
+rabbit_running = False
+
 
 def handle_button_push(channel):
     global led_counter
-    global stop
-    stop = True
-    print("Button pushed, led at", led_counter)
+    global caught
+    global rabbit_running
+    if rabbit_running:
+        caught = True
+        print("Button pushed, with led at position", led_counter)
+    else:
+        print("Rabbit not running, turn over")
 
 
 def initialize_interrupt(pin: int):
@@ -29,10 +35,12 @@ def initialize_interrupt(pin: int):
 
 
 def countdown(pixels, start):
+    global num_pixels
     toggler = True
     for p in range(start, 0, -1):
         if toggler:
-            pixels.fill((255, 255, 255))
+            for i in range(num_pixels):
+              pixels[i] = (128, 128, 128)
         else:
             pixels.fill((0, 0, 0))
         toggler = not toggler
@@ -45,28 +53,36 @@ def countdown(pixels, start):
 def cycle_timer(pixels):
     global num_pixels
     global led_counter
-    global stop
+    global caught
+    global rabbit_running
     waiting_color = (255, 255, 255)
     stopped_color = (255, 0, 0)
     off = (0, 0, 0)
     countdown(pixels, 5)
+    rabbit_running = True
+    caught = False
+    led_counter = 0
     start = time()
     for i in range(num_pixels):
         pixels[i] = waiting_color
         pixels.show()
         led_counter = i
         sleep(0.001)
-        if stop:
+        if caught:
             elapsed = time() - start
+            rabbit_running = False
             print(f"Elapsed time {elapsed}, seconds, expected {100 * 1} mS")
+            pixels.fill((0, 0, 0))
             for index in range(i):
-                pixels[i] = stopped_color
+                pixels[index] = stopped_color
             pixels.show()
-            sleep(10)
             break
         pixels[i] = off
-    pixels.fill((0, 0, 0))
-    pixels.show()
+    if not caught:
+        print(f"Too late, button not pushed in time, new game coming up")
+        pixels.fill((0, 0, 0))
+        pixels.show()
+    rabbit_running = False
 
 
 def main():
@@ -77,11 +93,15 @@ def main():
     show_all_leds(pixels)
     sleep(3)
     initialize_interrupt(BUTTON_PIN)
-    cycle_timer(pixels)
+    while True:
+        cycle_timer(pixels)
+        for i in range(5, 0, -1):
+            print(f"New game in {i} seconds")
+            sleep(1)
 
 
 if __name__ == "__main__":
     try:
-      main()
+        main()
     finally:
-      GPIO.cleanup()
+        GPIO.cleanup()
