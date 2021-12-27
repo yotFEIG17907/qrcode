@@ -42,7 +42,7 @@ def get_fft(data: ndarray, window):
     data = data * window
     FFT = fft(data)
     # Amplitude/Power
-    # Cannot take log because some values are zero
+    # This will blow up if any values of the FFT are zero
     levels = np.log10(np.abs(FFT)) ** 2
     # Only 1st half is real
     return levels[:len(levels) // 2]
