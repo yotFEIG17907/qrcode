@@ -3,7 +3,7 @@ import time
 import RPi.GPIO as GPIO
 
 """
-How to handle interrupts
+How to handle interrupts on the Raspberry PI
 """
 
 RUN = True
