@@ -201,10 +201,10 @@ class MqttComms:
 
     def publish(self, topic: str, payload=None, qos=0, retain=False):
         rc: mqtt.MQTTMessageInfo = self.client.publish(topic, payload, qos, retain)
-        self.logger.info("Message published to topic %s payload %s", topic, payload)
+        self.logger.debug("Message published to topic %s payload %s", topic, payload)
         error_code = rc.rc
         if error_code == mqtt.MQTT_ERR_SUCCESS:
-            self.logger.info("Message published or queued for publishing")
+            self.logger.debug("Message published or queued for publishing")
         elif error_code == mqtt.MQTT_ERR_NO_CONN:
             self.logger.error("Not connected, message discarded")
         elif error_code == mqtt.MQTT_ERR_CONN_REFUSED:

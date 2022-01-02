@@ -12,6 +12,8 @@ from pathlib import Path
 from comms import run_tasks_in_parallel_no_block
 from comms.mqtt_comms import MqttComms, SensorListener
 from discovery import get_service_host_port_block
+from led_utls.led_strand_class import LEDStrand
+from messages.serdeser import cmd_from_json
 
 
 class LEDCommandGatewayListener(SensorListener):
@@ -21,8 +23,9 @@ class LEDCommandGatewayListener(SensorListener):
     which are used to command the music player.
     """
 
-    def __init__(self):
+    def __init__(self, led_driver = None):
         self.logger = logging.getLogger("comms.mqtt")
+        self.led_driver = led_driver
 
     def on_disconnect(self, reason: str):
         self.logger.debug("Disconnection event %s", reason)
@@ -33,7 +36,11 @@ class LEDCommandGatewayListener(SensorListener):
     def on_message(self, topic: str, payload: bytes):
         try:
             cmd_str = payload.decode("utf-8")
-            self.logger.info("Topic %s, Payload %s", topic, cmd_str)
+            cmd = cmd_from_json(cmd_str)
+            self.logger.debug("Topic %s, Payload %s", topic, type(cmd))
+            if self.led_driver is not None:
+                self.led_driver.execute(cmd)
+
         except Exception as e:
             self.logger.error("Problem with message %s:%s, exception %s", topic, cmd_str, str(e))
             traceback.print_exc()
@@ -90,7 +97,8 @@ def main():
     cmd_topic = args.cmd_topic
     keep_alive_seconds = 20
 
-    test_listener = LEDCommandGatewayListener()
+    led_driver = LEDStrand(n=100)
+    test_listener = LEDCommandGatewayListener(led_driver=led_driver)
     comms = MqttComms(client_id=client_id,
                       cert_path=cert_path,
                       username=username,

@@ -18,7 +18,7 @@ num_pixels = 100
 
 pixels = adafruit_ws2801.WS2801(clock=CLK, data=SDI, n=num_pixels, brightness=bright, auto_write=False)
 
-def zipper(pixels, num_pixesl, wait):
+def zipper(pixels, num_pixels, wait):
     r = 50
     g = 50
     b = 50

@@ -35,6 +35,15 @@
 from typing import Tuple
 
 
+def wavelength_range() -> Tuple[float, float]:
+    """
+    Returns a tuple givimg the min and max wavelength ocvered by
+    wavelength to RGB
+    :return: A tuple of floats
+    """
+    return 380.0, 750.0
+
+
 def wavelength_to_rgb(wavelength: int, gamma=0.8) -> Tuple[int, int, int]:
     """
     Converts a wavelength to an RGB value

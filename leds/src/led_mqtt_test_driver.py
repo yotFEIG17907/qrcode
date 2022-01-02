@@ -8,11 +8,15 @@ import logging
 import logging.config
 import time
 from pathlib import Path
+from typing import Any
 
 from comms import run_tasks_in_parallel_no_block
 from comms.mqtt_comms import MqttComms, SensorListener
 from discovery import get_service_host_port_block
+from led_messages.led_commands import FillAll, SetPixels
 from led_mqtt_client import LEDCommandGatewayListener
+from led_utls.nm_to_rgb import wavelength_range, wavelength_to_rgb
+from messages.serdeser import cmd_to_json
 
 
 class DriverCommsRunner:
@@ -46,8 +50,8 @@ class DriverCommsRunner:
         """
         self.comms.connect_and_run(keep_alive_seconds=keep_alive_seconds)
 
-    def publish(self, pub_topic: str, cmd: bytes):
-        msg = cmd
+    def publish(self, pub_topic: str, cmd: Any):
+        msg = cmd_to_json(cmd)
         self.comms.publish(topic=pub_topic, payload=msg, qos=2)
 
     def shutdown(self):
@@ -127,10 +131,26 @@ def main():
     run_tasks_in_parallel_no_block([
         lambda: comms.run(keep_alive_seconds=keep_alive_seconds)])
 
-    time.sleep(5.0)
+    time.sleep(1.0)
 
-    payload = "This is a test message"
-    comms.publish(cmd_topic, payload)
+    cmd = FillAll(payload=(155, 155, 155))
+    comms.publish(cmd_topic, cmd)
+    time.sleep(3.0)
+    cmd = FillAll(payload=(0, 0, 0))
+    comms.publish(cmd_topic, cmd)
+
+    num_pixels = 100
+    # Cycle the LEDs from RED to VIOLET
+    wavelengths = wavelength_range()
+    for i in range(int(wavelengths[1]), int(wavelengths[0]), -1):
+        values = []
+        for pixel in range(num_pixels):
+            values.append(wavelength_to_rgb(i))
+        cmd = SetPixels(payload=values)
+        comms.publish(cmd_topic, cmd)
+        time.sleep(0.01)
+    cmd = FillAll(payload=(0, 0, 0))
+    comms.publish(cmd_topic, cmd)
 
     # Generate and publish the commands
     time.sleep(5.0)
