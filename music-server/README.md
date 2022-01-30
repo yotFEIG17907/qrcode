@@ -125,6 +125,38 @@ pygame.mixer.pre_init(buffer=2048)
   music and the playlist on an external USB drive. The PI mounts these to `/media/pi/<VOLUME_NAME>` provided one of the
   standard file formats is used.
 
+## Connect to bluetooth speaker
+
+Bose speaker was connected via 3.5 mm audio cable, and the music was played back with no problem. But Bluetooth might be more useful and obviously requires
+no wires. I enabled Bluetooth by following these instructions: 
+[https://www.okdo.com/project/set-up-a-bluetooth-speaker-with-a-raspberry-pi/?ok_ts=1643561471276](https://www.okdo.com/project/set-up-a-bluetooth-speaker-with-a-raspberry-pi/?ok_ts=1643561471276)
+
+The scan didn't work at first, got message saying something about being blocked. Use these commands and saw that bluetooth was soft-blocked.
+
+```bash
+rfkill list
+# This lists each RF device and the status of soft and hard blocking.
+# Then use this to unblock just Bluetooth
+rfkill unblock bluetooth
+`
+Then I turn on scanning and told the Bose Soundlink to be ready to pair, it took several attempts for the Bose device to show up, and
+had to wait for a couple of scans. But then use pair and trust to hook it up.
+
+```bash
+scan on
+[NEW] Device 08:DF:1F:A6:38:D0 Bose Mini II SoundLink
+pair 08:DF:1F:A6:38:D0
+trust 08:DF:1F:A6:38:D0
+# And finally Connect to connect to it.
+connect 08:DF:1F:A6:38:D0
+# Use info to check
+info 08:DF:1F:A6:38:D0
+`
+`info` said the host was connected but still couldn't hear anything from the speaker; I had to power it off and on a few times to get it to work, eventually on powering up the SoundLink announced it was connected to "Music Player" which is the hostname of the Raspberry PI. And then after that music could be played through it using "paplay".
+
+But still need to check that the software will play through it.
+
+
 # Use text to speech for logging
 
 Follow the set up instructions
