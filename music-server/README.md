@@ -154,7 +154,7 @@ info 08:DF:1F:A6:38:D0
 `
 `info` said the host was connected but still couldn't hear anything from the speaker; I had to power it off and on a few times to get it to work, eventually on powering up the SoundLink announced it was connected to "Music Player" which is the hostname of the Raspberry PI. And then after that music could be played through it using "paplay".
 
-But still need to check that the software will play through it.
+And when the music-player was started it announces itself via text-to-speech and the speech came out of the speaker, via Bluetooth!!!
 
 
 # Use text to speech for logging
