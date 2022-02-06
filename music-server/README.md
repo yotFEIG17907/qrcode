@@ -138,7 +138,7 @@ rfkill list
 # This lists each RF device and the status of soft and hard blocking.
 # Then use this to unblock just Bluetooth
 rfkill unblock bluetooth
-`
+```
 Then I turn on scanning and told the Bose Soundlink to be ready to pair, it took several attempts for the Bose device to show up, and
 had to wait for a couple of scans. But then use pair and trust to hook it up.
 
@@ -151,7 +151,7 @@ trust 08:DF:1F:A6:38:D0
 connect 08:DF:1F:A6:38:D0
 # Use info to check
 info 08:DF:1F:A6:38:D0
-`
+```
 `info` said the host was connected but still couldn't hear anything from the speaker; I had to power it off and on a few times to get it to work, eventually on powering up the SoundLink announced it was connected to "Music Player" which is the hostname of the Raspberry PI. And then after that music could be played through it using "paplay".
 
 And when the music-player was started it announces itself via text-to-speech and the speech came out of the speaker, via Bluetooth!!!
