@@ -232,11 +232,11 @@ I also have the Bose, the two PIs and a network switch connected to power strip,
   * Using Python explicitly
   ```bash
   cd src
-  python3 client_player/sub_mqtt_driver.py -l ../conf/logging.config -p /media/pi/9016-4EF8/dylan_playlist.txt
+  python3 client_player/sub_mqtt_driver.py -l ../conf/logging.config -v /media/pi
   ```
   * Or using the console script
   ```bash
-  music_player -l ../conf/logging.config -p /media/pi/9016-4EF8/dylan_playlist.txt  
+  music_player -l ../conf/logging.config -v /media/pi  
   ```
 * QR Gateway Provides the web server interface. On my system the host is: `qrgateway.local`. The URL for the Swagger docs is http://qrgateway.local:8004
   * Using Python explicitly
