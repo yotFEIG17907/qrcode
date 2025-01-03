@@ -2,3 +2,6 @@
 /*.wav
 /leds/src/test1.wav
 /test-data/jeangenie.wav
+/music-comms/build/**
+/music-comms/dist/**
+
