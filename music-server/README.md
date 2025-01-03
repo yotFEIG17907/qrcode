@@ -98,7 +98,7 @@ code on the desktop and then upload and run on the PI.
   ```bash
   sudo apt install libsdl2-mixer-2.0
   ```
-* The music player had same problem running tasks in paralell that the qr-gateway had, the tasks seemed to be running
+* The music player had same problem running tasks in parallel that the qr-gateway had, the tasks seemed to be running in
   series -- because there was a block on getting results from each function. The comms function failed because the host
   name was missing a hyphen but the log message was not visible. Changing to the no_block version of the function worked
   and the error message was printed out, easy fix to the hostname.
@@ -192,11 +192,15 @@ here [Install Mosquitto Server](https://pimylifeup.com/raspberry-pi-mosquitto-mq
 
 # Running the system
 
-Reminder, in my setup I have a Raspberry PI 4 running the Music player and MQTT broker; this connects via a cable to small Bose music player. I also have a Raspberry PI 3 that runs either or both of a web server (the HTTP to MQTT bridge) or the Barcode reader. The two PIs are connected to a network switch which is connected to the nearest satellite of the house WiFi network; the main house router provides IP addresses via DHCP.
+Reminder, in my setup I have a Raspberry PI 4 running the Music player and MQTT broker; this connects via a 
+cable to small Bose music player. I also have a Raspberry PI 3 that runs either or both of a web server 
+(the HTTP to MQTT bridge) or the Barcode reader. The two PIs are connected to a network switch which is connected to the nearest satellite of the house WiFi network; the main house router provides IP addresses via DHCP.
 
 I also have the Bose, the two PIs and a network switch connected to power strip, turn them all at once. 
 
-* Music Player Node This has the music player and the mqtt broker. On my system the host is: `music-player.local`. Music is loaded onto USB flash drives plugged into this PI. It looks for play lists when it starts up; the player says where to find the music.
+* Music Player Node This has the music player and the mqtt broker. On my system the host is: `music-player.local`. 
+* Music is loaded onto USB flash drives plugged into this PI. It looks for play lists when it starts up; the 
+* player says where to find the music.
   * Using Python explicitly
   ```bash
   cd src
@@ -206,7 +210,8 @@ I also have the Bose, the two PIs and a network switch connected to power strip,
   ```bash
   music_player -l ../conf/logging.config -p /media/pi/9016-4EF8/dylan_playlist.txt  
   ```
-* QR Gateway Provides the web server interface. On my system the host is: `qrgateway.local`. The URL for the Swagger docs is http://qrgateway.local:8004
+* QR Gateway Provides the web server interface. On my system the host is: `qrgateway.local`. The URL for the Swagger
+* docs is http://qrgateway.local:8004
   * Using Python explicitly
   ```bash
   # This uses the defaults for everything. Need to add command-line arguments to this one

@@ -142,13 +142,13 @@ def main():
     num_pixels = 100
     # Cycle the LEDs from RED to VIOLET
     wavelengths = wavelength_range()
-    for i in range(int(wavelengths[1]), int(wavelengths[0]), -1):
+    for i in range(int(wavelengths[1]), int(wavelengths[0]), -5):
         values = []
         for pixel in range(num_pixels):
             values.append(wavelength_to_rgb(i))
         cmd = SetPixels(payload=values)
         comms.publish(cmd_topic, cmd)
-        time.sleep(0.01)
+        time.sleep(1.0)
     cmd = FillAll(payload=(0, 0, 0))
     comms.publish(cmd_topic, cmd)
 

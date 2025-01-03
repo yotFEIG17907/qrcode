@@ -156,7 +156,7 @@ class MediaLibParsers:
                         item: Item = Item(album_name=music_file.parent.stem, src=music_file)
                         items.append(item)
                     else:
-                        print("**WARN** File mentioned in playlist, but not found %s", str(music_file))
+                        print(f"**WARN** File mentioned in playlist, but not found {str(music_file)}")
             playlist: Playlist = Playlist(volume=volume, kind="Simple Text Playlist", title=title, items=items)
             playlists.append(playlist)
         if len(playlists) > 0:
