@@ -5,7 +5,7 @@ this (https://stackoverflow.com/questions/51296179/how-do-i-build-multiple-wheel
 
 Raspberry PI development. PyCharm supports report development via ssh; this uses PyCharm basically as a remote editor, 
 like using an SFTP plugin with Notepad++. But even better than that it can configure a remote python interpreter as 
-the interpreter for the project and then it becomes possible to run and debug the applicaiton via PyCharm when it is 
+the interpreter for the project and then it becomes possible to run and debug the application via PyCharm when it is 
 running on the remote system, e.g. a Raspberry PI. 
 
 And this also means that packages that are specific to the PI can be used in the complication so Auto-Completion 
